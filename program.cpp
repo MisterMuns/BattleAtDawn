@@ -40,7 +40,7 @@ public:
 	void stability();
 	void power();
 
-	void set_x_dot(double _x_dot) { x_dot = _x_dot; }
+	void set_x_dot();
 
 };
 
@@ -131,9 +131,26 @@ void Drone::stability()
 	
 	theta = 0.95 * theta;
 	x_dot = 0.90 * x_dot;
-
 	out_thrust = 0.95 * out_thrust + 49.25;
 	y_dot = 0.95 * y_dot;
+
+	if (abs(x_dot) < 0.05)
+	{
+		x_dot = 0.5*x_dot;
+	}
+
+	if (abs(x_dot) < 0.0005)
+	{
+		x_dot = 0.0001 * x_dot;
+	}
+
+	if (abs(y_dot) < 0.05)
+	{
+		y_dot = 0;
+
+	}
+
+
 
 }
 
@@ -160,6 +177,15 @@ void Drone::power()
 	}
 }
 
+
+void Drone::set_x_dot()
+{
+	x_dot = 0.5 * x_dotdot;
+	y_dot = 0.5 * y_dotdot;
+	x_dot = -0.5*x_dot;
+	y_dot = -0.5*y_dot;
+
+}
 
 class Box
 {
@@ -251,14 +277,14 @@ int main()
 		if (D1.get_x() < s1.get_right() && D1.get_x() > s1.get_left() && D1.get_y() < s1.get_top() && D1.get_y() > s1.get_bottom())
 		{
 			Box s1(200, 300, 90, 90, 1.0, 1.0, 1.0);
-			
+			D1.set_x_dot();
 		}
 
 		//D1.animate();
 		//D1.environment();
 		//D1.elements();
 		draw_sprite(id_drone, D1.get_x(), D1.get_y(), D1.get_theta(), 0.45);
-
+		
 		update();
 	}
 	
