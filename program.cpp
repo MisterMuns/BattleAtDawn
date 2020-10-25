@@ -40,6 +40,8 @@ public:
 	void stability();
 	void power();
 
+	void set_x_dot(double _x_dot) { x_dot = _x_dot; }
+
 };
 
 Drone::Drone(double _x, double _y, double _theta)
@@ -158,48 +160,70 @@ void Drone::power()
 	}
 }
 
-class square
+
+class Box
 {
 private:
 	double x, y;
 	double x_lenght, y_lenght;
 	double R[3], G[3], B[3];
+	double x_re[4], y_re[4];
 
 
 public:
-	square(int _x, int _y, int _x_lenght, int _y_lenght);
+	Box(int _x, int _y, int _x_lenght, int _y_lenght, double _r, double _g, double _b);
 
+	double get_left() { return x_re[0]; }
+	double get_right() { return x_re[1]; }
+	double get_top() { return y_re[2]; }
+	double get_bottom() { return y_re[0]; }
 };
 
-square::square(int _x, int _y, int _x_lenght, int _y_lenght)
+Box::Box(int _x, int _y, int _x_lenght, int _y_lenght, double _r, double _g, double _b)
 {
 
-	double R[3] = { 0.0, 0.0, 0.0 }; // red colour components
-	double G[3] = { 0.0, 0.0, 0.0 }; // green colour components
-	double B[3] = { 0.0, 0.0, 0.0 }; // blue colour components
 
+	for (int i = 0; i < 3; i++)
+	{
+		R[i] = _r;
+		G[i] = _g;
+		B[i] = _b;
+	}
+	
 	x = _x;
 	y = _y;
 	x_lenght = _x_lenght;
 	y_lenght = _y_lenght;
 
-	double xt1[3];
-	double yt1[3];
+	x_re[0] = x - x_lenght / 2;
+	y_re[0] = y - y_lenght / 2;
+	x_re[1] = x + x_lenght / 2;
+	y_re[1] = y - y_lenght / 2;
+	x_re[2] = x + x_lenght / 2;
+	y_re[2] = y + y_lenght / 2;
+	x_re[3] = x - x_lenght / 2;
+	y_re[3] = y + y_lenght / 2;
 
-	xt1[0] = x - x_lenght / 2;
-	yt1[0] = y + x_lenght / 2;
-	xt1[1] = xt1[0];
-	yt1[1] = y - x_lenght / 2;
-	xt1[2] = x + x_lenght / 2;
-	yt1[2] = yt1[0];
+	double xt[3];
+	double yt[3];
 
-	triangle(xt1, yt1, R, G, B);
-	
-	xt1[1] = x + x_lenght / 2;
-	yt1[1] = y + y_lenght / 2;
+	xt[0] = x - x_lenght / 2;
+	yt[0] = y - y_lenght / 2;
+	xt[1] = x + x_lenght / 2;
+	yt[1] = y - y_lenght / 2;
+	xt[2] = x + x_lenght / 2;
+	yt[2] = y + y_lenght / 2;
 
-	triangle(xt1, yt1, R, G, B);
+	triangle(xt, yt, R, G, B);
+
+	xt[1] = x - x_lenght / 2;
+	yt[1] = y + y_lenght / 2;
+
+	triangle(xt, yt, R, G, B);
+
+
 }
+
 
 int main()
 {
@@ -214,13 +238,22 @@ int main()
 	for (;;)
 	{
 		clear();
-		square S1(300, 200, 150, 150);
+
+		Box s1(200,300,100,100, 0.0, 0.0, 0.0);
 
 		D1.set_delta_time();
 		D1.inputs();
 		D1.calculate();
 		D1.stability();
 		D1.power();
+
+
+		if (D1.get_x() < s1.get_right() && D1.get_x() > s1.get_left() && D1.get_y() < s1.get_top() && D1.get_y() > s1.get_bottom())
+		{
+			Box s1(200, 300, 90, 90, 1.0, 1.0, 1.0);
+			
+		}
+
 		//D1.animate();
 		//D1.environment();
 		//D1.elements();
