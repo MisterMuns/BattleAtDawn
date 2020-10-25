@@ -257,6 +257,7 @@ int main()
 	
 	Drone D1(400, 300, 0);
 	
+	cout << "\n Meow meow, welcome to the program :)\n";
 
 	int id_drone;
 	create_sprite("FrontView.png", id_drone);
