@@ -23,6 +23,7 @@ private:
 	double in_thrust, out_thrust;
 	double in_roll;
 	double delta_time;
+	int power_count, power_time;
 
 public:
 	
@@ -37,6 +38,7 @@ public:
 	void set_delta_time();
 	void inputs();
 	void stability();
+	void power();
 
 };
 
@@ -100,11 +102,11 @@ void Drone::inputs()
 {
 	if (KEY('W'))
 	{
-		in_thrust += 0.10;
+		in_thrust += 0.70;
 	}
 	else if (KEY('S'))
 	{
-		in_thrust -= 0.10;
+		in_thrust -= 0.70;
 	}
 
 	if (in_thrust <= 0) in_thrust = 0;
@@ -118,22 +120,85 @@ void Drone::inputs()
 		in_roll -= 0.005;
 	}
 
-	out_thrust = in_thrust;
+	
 	theta = in_roll;
 }
 
 void Drone::stability()
 {
-	if (theta > 0.0 || theta < 0.0)
+	
+	theta = 0.95 * theta;
+	x_dot = 0.90 * x_dot;
+
+	out_thrust = 0.95 * out_thrust + 49.25;
+	y_dot = 0.95 * y_dot;
+
+}
+
+void Drone::power()
+{
+	if (KEY('P'))
 	{
-		theta = (1.0/1.1)*theta;
-		x_dot = (1.0/10.0)*x_dot;
-			
+		power_time += 1;
+	}
+	
+	if (power_time > 300)
+	{
+		power_time = 0;
+		power_count++;
 	}
 
-	out_thrust = (1.0 / 10.0) * out_thrust + 49.25;
-	y_dot = (1.0 / 1.1) * y_dot;
+	if (power_count % 2 == 0)
+	{
+		out_thrust = 0;
+	}
+	else
+	{
+		out_thrust = in_thrust;
+	}
+}
 
+class square
+{
+private:
+	double x, y;
+	double x_lenght, y_lenght;
+	double R[3], G[3], B[3];
+
+
+public:
+	square(int _x, int _y, int _x_lenght, int _y_lenght);
+
+};
+
+square::square(int _x, int _y, int _x_lenght, int _y_lenght)
+{
+
+	double R[3] = { 0.0, 0.0, 0.0 }; // red colour components
+	double G[3] = { 0.0, 0.0, 0.0 }; // green colour components
+	double B[3] = { 0.0, 0.0, 0.0 }; // blue colour components
+
+	x = _x;
+	y = _y;
+	x_lenght = _x_lenght;
+	y_lenght = _y_lenght;
+
+	double xt1[3];
+	double yt1[3];
+
+	xt1[0] = x - x_lenght / 2;
+	yt1[0] = y + x_lenght / 2;
+	xt1[1] = xt1[0];
+	yt1[1] = y - x_lenght / 2;
+	xt1[2] = x + x_lenght / 2;
+	yt1[2] = yt1[0];
+
+	triangle(xt1, yt1, R, G, B);
+	
+	xt1[1] = x + x_lenght / 2;
+	yt1[1] = y + y_lenght / 2;
+
+	triangle(xt1, yt1, R, G, B);
 }
 
 int main()
@@ -141,17 +206,21 @@ int main()
 	initialize_graphics();
 	
 	Drone D1(400, 300, 0);
+	
+
 	int id_drone;
 	create_sprite("FrontView.png", id_drone);
 	
 	for (;;)
 	{
 		clear();
+		square S1(300, 200, 150, 150);
 
 		D1.set_delta_time();
 		D1.inputs();
 		D1.calculate();
 		D1.stability();
+		D1.power();
 		//D1.animate();
 		//D1.environment();
 		//D1.elements();
@@ -159,92 +228,6 @@ int main()
 
 		update();
 	}
-
-
-
-
-	/*
-	initialize_graphics();
-
-	for (;;)
-	{
-		clear();
-
-		draw_sprite(id_drone, 200, 200, 0, 1.0);
-		//draw_sprite(id_drone, D1.get_x(), D1.get_y() , D1.get_theta(),  1.0);
-
-		update();
-	}
-
-	*/
-
-
-	/*
-	Drone D1(0, 0, 0); //Initialize drone at x=0, y=0, theta=0;
-	 
-	D1.calculate(input thrust, input pitch); //Input pitch angle, input thrust
-					//Inside calculate, maybe include animation based on thrust
-	
-	
-	D1.mapping(Taking x, y information) //Move entire screen for bigger map
-
-	D1.collision(x position, y position, drone area, boxes location array); //If drone touches any other box, game over
-	*/
-
-	/*
-	initialize_graphics();
-
-	Z Drone(0,0,0);
-
-
-	double x_move = 0.0;
-	double y_move = 0.0;
-
-	int id_cat;
-	double theta;
-
-
-	create_sprite("cat.png", id_cat);
-
-
-	theta = 0;
-	int scale = 1.0;
-
-	double y1 = 0;
-	double y2 = 0;
-	double y3 = 0;
-
-	clear();
-
-	for (;;)
-	{
-		clear();
-
-
-		Drone.calculate();
-
-
-		draw_sprite(id_cat, 200 + x_move, 200 + Drone.Z_current() , theta, scale);
-
-
-		update();
-
-		if (KEY('I'))
-		{
-			Drone.Force = 50.0;
-
-		}
-		else
-		{
-			Drone.Force = 0.0;
-		}
-
-		if (KEY('L')) x_move += 5.0; // l key is pressed
-		if (KEY('J')) x_move -= 5.0;
-		if (KEY('K')) y_move -= 5.0;
-		
-	}
-	*/
 	
 
 	cout << "\ndone.\n";
