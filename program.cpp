@@ -40,7 +40,7 @@ public:
 	void stability();
 	void power();
 
-	void set_x_dot();
+	void bounce();
 
 };
 
@@ -111,8 +111,6 @@ void Drone::inputs()
 		in_thrust -= 0.70;
 	}
 
-	if (in_thrust <= 0) in_thrust = 0;
-
 	if (KEY('A'))
 	{
 		in_roll += 0.005;
@@ -122,7 +120,10 @@ void Drone::inputs()
 		in_roll -= 0.005;
 	}
 
-	
+	if (in_thrust <= 0) in_thrust = 0;
+	if (in_roll > 0.300) in_roll = 0.300;
+	if (in_roll < -0.300) in_roll = -0.300;
+
 	theta = in_roll;
 }
 
@@ -133,6 +134,7 @@ void Drone::stability()
 	x_dot = 0.90 * x_dot;
 	out_thrust = 0.95 * out_thrust + 49.25;
 	y_dot = 0.95 * y_dot;
+
 
 	if (abs(x_dot) < 0.05)
 	{
@@ -178,12 +180,39 @@ void Drone::power()
 }
 
 
-void Drone::set_x_dot()
+void Drone::bounce()
 {
-	x_dot = 0.5 * x_dotdot;
-	y_dot = 0.5 * y_dotdot;
-	x_dot = -0.5*x_dot;
-	y_dot = -0.5*y_dot;
+	
+	double offset = 40;
+	double bounce = pow((x_dot * x_dot + y_dot * y_dot), 0.5);
+
+	if (y_dot > 0)
+	{
+		y_dot = -bounce;
+		y = y - offset;
+
+	}
+	else if (y_dot < 0)
+	{
+		y_dot = bounce;
+		y = y + offset;
+	}
+
+	if (x_dot > 0)
+	{
+		x_dot = -bounce;
+		x = x - offset;
+
+	}
+	else if (x_dot < 0)
+	{
+		x_dot = bounce;
+		x = x + offset;
+
+	}
+
+
+	
 
 }
 
@@ -198,6 +227,7 @@ private:
 
 public:
 	Box(int _x, int _y, int _x_lenght, int _y_lenght, double _r, double _g, double _b);
+	void draw();
 
 	double get_left() { return x_re[0]; }
 	double get_right() { return x_re[1]; }
@@ -230,6 +260,10 @@ Box::Box(int _x, int _y, int _x_lenght, int _y_lenght, double _r, double _g, dou
 	x_re[3] = x - x_lenght / 2;
 	y_re[3] = y + y_lenght / 2;
 
+}
+
+void Box::draw()
+{
 	double xt[3];
 	double yt[3];
 
@@ -246,8 +280,6 @@ Box::Box(int _x, int _y, int _x_lenght, int _y_lenght, double _r, double _g, dou
 	yt[1] = y + y_lenght / 2;
 
 	triangle(xt, yt, R, G, B);
-
-
 }
 
 
@@ -256,13 +288,6 @@ int main()
 	initialize_graphics();
 	
 	Drone D1(400, 300, 0);
-	
-
-	cout << "\n Meow meow, welcome to the program :)\n";
-	//just a random local change
-
-	cout << "\n WE LOVE CATS YESSS :)\n";
-
 
 	int id_drone;
 	create_sprite("FrontView.png", id_drone);
@@ -271,7 +296,10 @@ int main()
 	{
 		clear();
 
-		Box s1(200,300,100,100, 0.0, 0.0, 0.0);
+		Box D1_Area(D1.get_x(), D1.get_y(),120,40, 1.0, 1.0, 1.0);
+		
+		Box Rigid(400, 100, 200, 100, 0.0, 0.0, 0.0);
+		Rigid.draw();
 
 		D1.set_delta_time();
 		D1.inputs();
@@ -280,11 +308,12 @@ int main()
 		D1.power();
 
 
-		if (D1.get_x() < s1.get_right() && D1.get_x() > s1.get_left() && D1.get_y() < s1.get_top() && D1.get_y() > s1.get_bottom())
+		
+		if (D1_Area.get_left() < Rigid.get_right() && D1_Area.get_right() > Rigid.get_left() && D1_Area.get_bottom() < Rigid.get_top() && D1_Area.get_top() > Rigid.get_bottom())
 		{
-			Box s1(200, 300, 90, 90, 1.0, 1.0, 1.0);
-			D1.set_x_dot();
+			D1.bounce();
 		}
+		
 
 		//D1.animate();
 		//D1.environment();
