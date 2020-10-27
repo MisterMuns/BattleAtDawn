@@ -19,6 +19,7 @@ class Drone
 {
 private:
 	double mass;
+	double hp;							//Drone health (100 pixels) - used as reference between green bar and damage received
 	double x, x_dot, x_dotdot;
 	double y, y_dot, y_dotdot;
 	double theta;
@@ -40,11 +41,12 @@ public:
 	double get_x();
 	double get_y();
 	double get_theta();
+	double get_hp();					//Returns drone HP, used in mathematical expression to calculate new green bar length
 	void set_delta_time();
 	void inputs();
 	void stability();
 	void power();
-	void controller();
+	//void controller();
 	void bounce();
 	double get_aim();
 
@@ -64,6 +66,7 @@ Drone::Drone(double _x, double _y, double _theta)
 	out_thrust = 0.0;
 	delta_time = 0.1;
 	in_roll = 0.0;
+	hp = 100;							//Drone starts at full health (100 health points = 100 pixels)
 
 	index = 1;
 
@@ -82,6 +85,11 @@ double Drone::get_y()
 double Drone::get_theta()
 {
 	return theta;
+}
+
+double Drone::get_hp()
+{
+	return hp;
 }
 
 void Drone::calculate()
@@ -130,7 +138,7 @@ void Drone::inputs()
 
 }
 
-void Drone::controller()
+/*void Drone::controller()
 {
 
 	gamepad_state(GS, index);
@@ -158,9 +166,9 @@ void Drone::controller()
 	cout << GS[i] << " ";
 	}
 	cout << "\n";
-	*/
+	
 }
-
+*/
 double Drone::get_aim()
 {
 	return aim_angle;
@@ -255,7 +263,12 @@ void Drone::bounce()
 
 	}
 
-
+	if (hp >= 20) {
+		hp -= 20;			   //Drone health (100 pixels) - take 20 damage when bounch occurs
+	}
+	else {
+		hp = 0;
+	}
 	
 
 }
@@ -345,6 +358,12 @@ int main()
 
 		Box D1_Area(D1.get_x(), D1.get_y(),120,40, 1.0, 1.0, 1.0);
 		
+		Box D1_HPb(D1.get_x(), (D1.get_y() + 40), 106, 16, 0.0, 0.0, 0.0);	//Black outline of the HP bar
+		D1_HPb.draw();
+
+		Box D1_HPg(D1.get_x() - ((100 - D1.get_hp()) / 2), D1.get_y() + 40, D1.get_hp(), 10, 0.0, 1.0, 0.0);	//This assumes HP is set at 100, not flexible
+		D1_HPg.draw();
+
 		Box Rigid(400, 100, 200, 100, 0.0, 0.0, 0.0);
 		Rigid.draw();
 
@@ -354,7 +373,7 @@ int main()
 		D1.stability();
 		D1.power();
 
-		D1.controller();
+		//D1.controller();
 		
 		if (D1_Area.get_left() < Rigid.get_right() && D1_Area.get_right() > Rigid.get_left() && D1_Area.get_bottom() < Rigid.get_top() && D1_Area.get_top() > Rigid.get_bottom())
 		{
