@@ -264,13 +264,13 @@ class Box
 {
 private:
 	double x, y;
-	double x_lenght, y_lenght;
+	double x_length, y_length;
 	double R[3], G[3], B[3];
 	double x_re[4], y_re[4];
 
 
 public:
-	Box(int _x, int _y, int _x_lenght, int _y_lenght, double _r, double _g, double _b);
+	Box(int _x, int _y, int _x_length, int _y_length, double _r, double _g, double _b);
 	void draw();
 
 	double get_left() { return x_re[0]; }
@@ -279,7 +279,7 @@ public:
 	double get_bottom() { return y_re[0]; }
 };
 
-Box::Box(int _x, int _y, int _x_lenght, int _y_lenght, double _r, double _g, double _b)
+Box::Box(int _x, int _y, int _x_length, int _y_length, double _r, double _g, double _b)
 {
 
 
@@ -292,17 +292,17 @@ Box::Box(int _x, int _y, int _x_lenght, int _y_lenght, double _r, double _g, dou
 	
 	x = _x;
 	y = _y;
-	x_lenght = _x_lenght;
-	y_lenght = _y_lenght;
+	x_length = _x_length;
+	y_length = _y_length;
 
-	x_re[0] = x - x_lenght / 2;
-	y_re[0] = y - y_lenght / 2;
-	x_re[1] = x + x_lenght / 2;
-	y_re[1] = y - y_lenght / 2;
-	x_re[2] = x + x_lenght / 2;
-	y_re[2] = y + y_lenght / 2;
-	x_re[3] = x - x_lenght / 2;
-	y_re[3] = y + y_lenght / 2;
+	x_re[0] = x - x_length / 2;
+	y_re[0] = y - y_length / 2;
+	x_re[1] = x + x_length / 2;
+	y_re[1] = y - y_length / 2;
+	x_re[2] = x + x_length / 2;
+	y_re[2] = y + y_length / 2;
+	x_re[3] = x - x_length / 2;
+	y_re[3] = y + y_length / 2;
 
 }
 
@@ -311,17 +311,17 @@ void Box::draw()
 	double xt[3];
 	double yt[3];
 
-	xt[0] = x - x_lenght / 2;
-	yt[0] = y - y_lenght / 2;
-	xt[1] = x + x_lenght / 2;
-	yt[1] = y - y_lenght / 2;
-	xt[2] = x + x_lenght / 2;
-	yt[2] = y + y_lenght / 2;
+	xt[0] = x - x_length / 2;
+	yt[0] = y - y_length / 2;
+	xt[1] = x + x_length / 2;
+	yt[1] = y - y_length / 2;
+	xt[2] = x + x_length / 2;
+	yt[2] = y + y_length / 2;
 
 	triangle(xt, yt, R, G, B);
 
-	xt[1] = x - x_lenght / 2;
-	yt[1] = y + y_lenght / 2;
+	xt[1] = x - x_length / 2;
+	yt[1] = y + y_length / 2;
 
 	triangle(xt, yt, R, G, B);
 }
