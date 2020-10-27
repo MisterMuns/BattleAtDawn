@@ -343,7 +343,12 @@ void Box::draw()
 int main()
 {
 	initialize_graphics();
-	
+
+	//for (;;)
+	//{
+		//int trigger = 2;
+
+
 	Drone D1(400, 300, 0);
 
 	int id_drone;
@@ -380,6 +385,16 @@ int main()
 			D1.bounce();
 		}
 		
+		/*
+		if (D1.get_hp() == 0) {											//Status check, restart drone simulation if HP = 0
+			double text_x = 255, text_y = 425, text_scale = 1.0;
+			Box restart(450, 400, 500, 400, 0.0, 0.0, 0.0);				//Backdrop for text
+			restart.draw();
+
+
+			text("Press R to restart", text_x, text_y, text_scale);		//Text to restart simulation
+			break;
+		}*/
 
 		//D1.animate();
 		//D1.environment();
@@ -391,6 +406,13 @@ int main()
 		update();
 	}
 	
+	//while (trigger != 1) {   
+	//if (KEY('R')) {
+		//trigger = 1;
+	//}
+//}
+
+//}
 
 	cout << "\ndone.\n";
 	getchar();
