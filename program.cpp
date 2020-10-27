@@ -20,6 +20,7 @@ class Drone
 private:
 	double mass;
 	double hp;							//Drone health (100 pixels) - used as reference between green bar and damage received
+	double aim_angle;
 	double x, x_dot, x_dotdot;
 	double y, y_dot, y_dotdot;
 	double theta;
@@ -29,7 +30,7 @@ private:
 	int power_count, power_time;
 	int index, GS[N_GS];			//Game Pad Controller Variables
 
-	double aim_angle;
+	
 
 public:
 	
@@ -46,7 +47,7 @@ public:
 	void inputs();
 	void stability();
 	void power();
-	//void controller();
+	void controller();
 	void bounce();
 	double get_aim();
 
@@ -138,7 +139,7 @@ void Drone::inputs()
 
 }
 
-/*void Drone::controller()
+void Drone::controller()
 {
 
 	gamepad_state(GS, index);
@@ -166,9 +167,9 @@ void Drone::inputs()
 	cout << GS[i] << " ";
 	}
 	cout << "\n";
-	
+	*/
 }
-*/
+
 double Drone::get_aim()
 {
 	return aim_angle;
@@ -344,75 +345,84 @@ int main()
 {
 	initialize_graphics();
 
-	//for (;;)
-	//{
-		//int trigger = 2;
-
-
-	Drone D1(400, 300, 0);
-
-	int id_drone;
-	create_sprite("FrontView.png", id_drone);
-
-	int id_laser;
-	create_sprite("Laser.png", id_laser);
-	
 	for (;;)
 	{
-		clear();
+		bool trigger = 0;
 
-		Box D1_Area(D1.get_x(), D1.get_y(),120,40, 1.0, 1.0, 1.0);
-		
-		Box D1_HPb(D1.get_x(), (D1.get_y() + 40), 106, 16, 0.0, 0.0, 0.0);	//Black outline of the HP bar
-		D1_HPb.draw();
 
-		Box D1_HPg(D1.get_x() - ((100 - D1.get_hp()) / 2), D1.get_y() + 40, D1.get_hp(), 10, 0.0, 1.0, 0.0);	//This assumes HP is set at 100, not flexible
-		D1_HPg.draw();
+		Drone D1(400, 300, 0);
 
-		Box Rigid(400, 100, 200, 100, 0.0, 0.0, 0.0);
-		Rigid.draw();
+		int id_drone;
+		create_sprite("FrontView.png", id_drone);
 
-		D1.set_delta_time();
-		D1.inputs();
-		D1.calculate();
-		D1.stability();
-		D1.power();
+		int id_laser;
+		create_sprite("Laser.png", id_laser);
 
-		//D1.controller();
-		
-		if (D1_Area.get_left() < Rigid.get_right() && D1_Area.get_right() > Rigid.get_left() && D1_Area.get_bottom() < Rigid.get_top() && D1_Area.get_top() > Rigid.get_bottom())
+		for (;;)
 		{
-			D1.bounce();
+			clear();
+
+			Box D1_Area(D1.get_x(), D1.get_y(), 120, 40, 1.0, 1.0, 1.0);
+
+			Box D1_HPb(D1.get_x(), (D1.get_y() + 40), 106, 16, 0.0, 0.0, 0.0);	//Black outline of the HP bar
+			D1_HPb.draw();
+
+			Box D1_HPg(D1.get_x() - ((100 - D1.get_hp()) / 2), D1.get_y() + 40, D1.get_hp(), 10, 0.0, 1.0, 0.0);	//This assumes HP is set at 100, not flexible
+			D1_HPg.draw();
+
+			Box Rigid(400, 100, 200, 100, 0.0, 0.0, 0.0);
+			Rigid.draw();
+
+			D1.set_delta_time();
+			D1.inputs();
+			D1.calculate();
+			D1.stability();
+			D1.power();
+
+			//D1.controller();
+
+			if (D1_Area.get_left() < Rigid.get_right() && D1_Area.get_right() > Rigid.get_left() && D1_Area.get_bottom() < Rigid.get_top() && D1_Area.get_top() > Rigid.get_bottom())
+			{
+				D1.bounce();
+			}
+
+
+			if (D1.get_hp() == 0) {											//Status check, restart drone simulation if HP = 0
+
+				break;
+			}
+
+			//D1.animate();
+			//D1.environment();
+			//D1.elements();
+			draw_sprite(id_drone, D1.get_x(), D1.get_y(), D1.get_theta(), 0.45);
+
+			draw_sprite(id_laser, D1.get_x(), D1.get_y(), D1.get_aim(), 1.0);
+
+			update();
 		}
-		
-		/*
-		if (D1.get_hp() == 0) {											//Status check, restart drone simulation if HP = 0
+
+		while (trigger != 1) 
+		{
+			clear();
 			double text_x = 255, text_y = 425, text_scale = 1.0;
-			Box restart(450, 400, 500, 400, 0.0, 0.0, 0.0);				//Backdrop for text
+			Box restart(450, 400, 400, 200, 0.0, 0.0, 0.0);				//Backdrop for text
 			restart.draw();
 
-
 			text("Press R to restart", text_x, text_y, text_scale);		//Text to restart simulation
-			break;
-		}*/
 
-		//D1.animate();
-		//D1.environment();
-		//D1.elements();
-		draw_sprite(id_drone, D1.get_x(), D1.get_y(), D1.get_theta(), 0.45);
+			if (KEY('R')) 
+			{
+				trigger = 1;
+			}
 
-		draw_sprite(id_laser, D1.get_x(), D1.get_y(), D1.get_aim(), 1.0);
-		
-		update();
+			update();
+		}
+		trigger = 0;
 	}
-	
-	//while (trigger != 1) {   
-	//if (KEY('R')) {
-		//trigger = 1;
-	//}
-//}
 
-//}
+
+
 
 	cout << "\ndone.\n";
 	getchar();
