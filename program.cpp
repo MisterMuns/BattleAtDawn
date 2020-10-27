@@ -7,6 +7,8 @@
 
 #include "2D_graphics.h" // use the 2D graphics library
 
+#include "game_pad.h"
+
 #include "timer.h" // use the time / clock reading function
 
 using namespace std;
@@ -24,6 +26,9 @@ private:
 	double in_roll;
 	double delta_time;
 	int power_count, power_time;
+	int index, GS[N_GS];			//Game Pad Controller Variables
+
+	double aim_angle;
 
 public:
 	
@@ -39,8 +44,9 @@ public:
 	void inputs();
 	void stability();
 	void power();
-
+	void controller();
 	void bounce();
+	double get_aim();
 
 };
 
@@ -58,6 +64,8 @@ Drone::Drone(double _x, double _y, double _theta)
 	out_thrust = 0.0;
 	delta_time = 0.1;
 	in_roll = 0.0;
+
+	index = 1;
 
 }
 
@@ -82,7 +90,7 @@ void Drone::calculate()
 	y_dot = y_dot + y_dotdot * delta_time;
 	y = y + y_dot;
 
-	x_dotdot = -9.81 * gravity * sin(theta);
+	x_dotdot = -9.5*gravity * sin(theta);
 	x_dot = x_dot + x_dotdot * delta_time;
 	x = x + x_dot;
 }
@@ -120,19 +128,55 @@ void Drone::inputs()
 		in_roll -= 0.005;
 	}
 
+}
+
+void Drone::controller()
+{
+
+	gamepad_state(GS, index);
+	
+	in_thrust += 0.70*(GS[LEFT_STICK_Y] / 1.0e6);
+	in_roll   -= 0.005 * (GS[LEFT_STICK_X] / 1.0e6);
+	
+	double x = GS[RIGHT_STICK_X] / 1.0e6;
+	double y = GS[RIGHT_STICK_Y] / 1.0e6;
+
+	if (x > 0)
+	{
+		aim_angle = atan(y / x);
+	}
+	else if (x < 0)
+	{
+		aim_angle = 3.14 + atan(y / x);
+	}
+
+	
+
+	/*
+	for(int i=0;i<N_GS;i++) 
+	{
+	cout << GS[i] << " ";
+	}
+	cout << "\n";
+	*/
+}
+
+double Drone::get_aim()
+{
+	return aim_angle;
+}
+
+void Drone::stability()
+{
 	if (in_thrust <= 0) in_thrust = 0;
 	if (in_roll > 0.300) in_roll = 0.300;
 	if (in_roll < -0.300) in_roll = -0.300;
 
 	theta = in_roll;
-}
-
-void Drone::stability()
-{
 	
-	theta = 0.95 * theta;
-	x_dot = 0.90 * x_dot;
-	out_thrust = 0.95 * out_thrust + 49.25;
+	theta = 0.99 * theta;
+	x_dot =  0.95*x_dot;
+	out_thrust = 0.95 * in_thrust + 49.25;
 	y_dot = 0.95 * y_dot;
 
 
@@ -183,7 +227,7 @@ void Drone::power()
 void Drone::bounce()
 {
 	
-	double offset = 40;
+	double offset = 30;
 	double bounce = pow((x_dot * x_dot + y_dot * y_dot), 0.5);
 
 	if (y_dot > 0)
@@ -291,6 +335,9 @@ int main()
 
 	int id_drone;
 	create_sprite("FrontView.png", id_drone);
+
+	int id_laser;
+	create_sprite("Laser.png", id_laser);
 	
 	for (;;)
 	{
@@ -307,7 +354,7 @@ int main()
 		D1.stability();
 		D1.power();
 
-
+		D1.controller();
 		
 		if (D1_Area.get_left() < Rigid.get_right() && D1_Area.get_right() > Rigid.get_left() && D1_Area.get_bottom() < Rigid.get_top() && D1_Area.get_top() > Rigid.get_bottom())
 		{
@@ -319,6 +366,8 @@ int main()
 		//D1.environment();
 		//D1.elements();
 		draw_sprite(id_drone, D1.get_x(), D1.get_y(), D1.get_theta(), 0.45);
+
+		draw_sprite(id_laser, D1.get_x(), D1.get_y(), D1.get_aim(), 1.0);
 		
 		update();
 	}
