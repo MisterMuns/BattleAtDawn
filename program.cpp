@@ -284,6 +284,7 @@ private:
 
 
 public:
+	Box();
 	Box(int _x, int _y, int _x_length, int _y_length, double _r, double _g, double _b);
 	void draw();
 
@@ -292,6 +293,15 @@ public:
 	double get_top() { return y_re[2]; }
 	double get_bottom() { return y_re[0]; }
 };
+
+Box::Box()
+{
+	x = 0.0;
+	y = 0.0;
+	x_length = 0.0;
+	y_length = 0.0;
+	
+}
 
 Box::Box(int _x, int _y, int _x_length, int _y_length, double _r, double _g, double _b)
 {
@@ -340,8 +350,8 @@ void Box::draw()
 	triangle(xt, yt, R, G, B);
 }
 
-void restore_hp(Drone& name1, Box& name2);
-
+void restore_hp(Drone& name1, Box name2);
+void collision(Drone &A, Box Drone, Box Rigid);
 
 int main()
 {
@@ -353,6 +363,7 @@ int main()
 
 
 		Drone D1(400, 300, 0);
+		Box Rigid[5];
 
 		int id_drone;
 		create_sprite("FrontView.png", id_drone);
@@ -366,7 +377,7 @@ int main()
 
 			Box D1_Area(D1.get_x(), D1.get_y(), 120, 40, 1.0, 1.0, 1.0);
 
-			Box HP_zone1(700, 500, 200, 200, 0.5, 0.5, 0.0);					//Box object that will be a healing area
+			Box HP_zone1(700, 500, 200, 200, 0.0, 0.5, 0.0);					//Box object that will be a healing area
 			HP_zone1.draw();
 
 			Box D1_HPb(D1.get_x(), (D1.get_y() + 40), 106, 16, 0.0, 0.0, 0.0);	//Black outline of the HP bar
@@ -374,9 +385,15 @@ int main()
 
 			Box D1_HPg(D1.get_x() - ((100 - D1.get_hp()) / 2), D1.get_y() + 40, D1.get_hp(), 10, 0.0, 1.0, 0.0);	//This assumes HP is set at 100, not flexible
 			D1_HPg.draw();
+
+
+			for (int i = 0; i < 5; i++)
+			{
+				Rigid[i] = Box(200 + i*200, 500, 20, 200, 0.0, 0.0, 0.0);
+				Rigid[i].draw();
+				collision(D1, D1_Area, Rigid[i]);
+			}
 			
-			Box Rigid(400, 100, 200, 100, 0.0, 0.0, 0.0);
-			Rigid.draw();
 
 			D1.set_delta_time();
 			D1.inputs();
@@ -387,10 +404,7 @@ int main()
 
 			//D1.controller();
 
-			if (D1_Area.get_left() < Rigid.get_right() && D1_Area.get_right() > Rigid.get_left() && D1_Area.get_bottom() < Rigid.get_top() && D1_Area.get_top() > Rigid.get_bottom())
-			{
-				D1.bounce();
-			}
+			
 
 
 			if (D1.get_hp() == 0) {											//Status check, restart drone simulation if HP = 0
@@ -402,7 +416,7 @@ int main()
 			//D1.environment();
 			//D1.elements();
 
-			D1_Area.draw();
+			//D1_Area.draw();
 
 			draw_sprite(id_drone, D1.get_x(), D1.get_y(), D1.get_theta(), 0.45);
 
@@ -439,8 +453,16 @@ int main()
 	return 0;
 }
 
+void collision(Drone &A, Box Drone, Box Rigid)
+{
 
-void restore_hp(Drone& name1, Box& name2) {
+	if (Drone.get_left() < Rigid.get_right() && Drone.get_right() > Rigid.get_left() && Drone.get_bottom() < Rigid.get_top() && Drone.get_top() > Rigid.get_bottom())
+	{
+		A.bounce();
+	}
+}
+
+void restore_hp(Drone& name1, Box name2) {
 	//IMPROVE: Can add extra variable later that is globally set for all health zones, regen less health at harder difficulty
 	//IMPROVE: Can add a cap of how much hp can be regenerated for the given Box &name2
 
