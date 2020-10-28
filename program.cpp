@@ -42,7 +42,7 @@ public:
 	double get_x();
 	double get_y();
 	double get_theta();
-	double get_hp();					//Returns drone HP, used in mathematical expression to calculate new green bar length
+	double& get_hp();					//Used as an access function for hp variable, return reference to get and set variable
 	void set_delta_time();
 	void inputs();
 	void stability();
@@ -88,7 +88,7 @@ double Drone::get_theta()
 	return theta;
 }
 
-double Drone::get_hp()
+double& Drone::get_hp()
 {
 	return hp;
 }
@@ -340,6 +340,8 @@ void Box::draw()
 	triangle(xt, yt, R, G, B);
 }
 
+void restore_hp(Drone& name1, Box& name2);
+
 
 int main()
 {
@@ -364,6 +366,9 @@ int main()
 
 			Box D1_Area(D1.get_x(), D1.get_y(), 120, 40, 1.0, 1.0, 1.0);
 
+			Box HP_zone1(700, 800, 200, 200, 0.5, 0.5, 0.0);					//Box object that will be a healing area
+			HP_zone1.draw();
+
 			Box D1_HPb(D1.get_x(), (D1.get_y() + 40), 106, 16, 0.0, 0.0, 0.0);	//Black outline of the HP bar
 			D1_HPb.draw();
 
@@ -378,6 +383,7 @@ int main()
 			D1.calculate();
 			D1.stability();
 			D1.power();
+			restore_hp(D1, HP_zone1);			//Function setting up Box object 'HP_zone1' as a healing area
 
 			//D1.controller();
 
@@ -428,4 +434,17 @@ int main()
 	getchar();
 
 	return 0;
+}
+
+
+void restore_hp(Drone& name1, Box& name2) {
+	//IMPROVE: Can add extra variable later that is globally set for all health zones, regen less health at harder difficulty
+	//IMPROVE: Can add a cap of how much hp can be regenerated for the given Box &name2
+
+	if (name1.get_x() > name2.get_left() && name1.get_x() < name2.get_right() && name1.get_y() < name2.get_top() && name1.get_y() > name2.get_bottom()) {
+		//Currently the origin of drone needs to be in the box zone, can change to the hitbox of the drone later if we want
+		if (name1.get_hp() < 100) {
+			name1.get_hp() += 1;
+		}
+	}
 }
