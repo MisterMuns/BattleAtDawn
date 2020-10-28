@@ -366,7 +366,7 @@ int main()
 
 			Box D1_Area(D1.get_x(), D1.get_y(), 120, 40, 1.0, 1.0, 1.0);
 
-			Box HP_zone1(700, 800, 200, 200, 0.5, 0.5, 0.0);					//Box object that will be a healing area
+			Box HP_zone1(700, 500, 200, 200, 0.5, 0.5, 0.0);					//Box object that will be a healing area
 			HP_zone1.draw();
 
 			Box D1_HPb(D1.get_x(), (D1.get_y() + 40), 106, 16, 0.0, 0.0, 0.0);	//Black outline of the HP bar
@@ -374,7 +374,7 @@ int main()
 
 			Box D1_HPg(D1.get_x() - ((100 - D1.get_hp()) / 2), D1.get_y() + 40, D1.get_hp(), 10, 0.0, 1.0, 0.0);	//This assumes HP is set at 100, not flexible
 			D1_HPg.draw();
-
+			
 			Box Rigid(400, 100, 200, 100, 0.0, 0.0, 0.0);
 			Rigid.draw();
 
@@ -401,6 +401,9 @@ int main()
 			//D1.animate();
 			//D1.environment();
 			//D1.elements();
+
+			D1_Area.draw();
+
 			draw_sprite(id_drone, D1.get_x(), D1.get_y(), D1.get_theta(), 0.45);
 
 			draw_sprite(id_laser, D1.get_x(), D1.get_y(), D1.get_aim(), 1.0);
