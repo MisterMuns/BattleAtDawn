@@ -29,7 +29,7 @@ private:
 	double delta_time;
 	int power_count, power_time;
 	int index, GS[N_GS];			//Game Pad Controller Variables
-	
+	int id_drone;
 
 public:
 	
@@ -49,6 +49,7 @@ public:
 	void controller();
 	void bounce();
 	double get_aim();
+	void draw();
 
 };
 
@@ -70,6 +71,7 @@ Drone::Drone(double _x, double _y, double _theta)
 	aim_angle = 0;
 
 	index = 1;
+	create_sprite("FrontView.png", id_drone);
 
 }
 
@@ -275,6 +277,17 @@ void Drone::bounce()
 
 }
 
+void Drone::draw()
+{
+	draw_sprite(id_drone, x, y, theta, 0.45);
+}
+
+class Enemy :public Drone
+{
+public:
+	Enemy(double _x, double _y, double _theta) : Drone(0, 0, 0) {}
+};
+
 class Box
 {
 private:
@@ -415,8 +428,9 @@ int main()
 		Box Rigid[5];
 		Bullet bullet[5];
 
-		int id_drone;
-		create_sprite("FrontView.png", id_drone);
+		Enemy D2(0,0,0);
+
+
 
 		int id_laser;
 		create_sprite("Laser.png", id_laser);
@@ -462,8 +476,9 @@ int main()
 			D1.stability();
 			D1.power();
 			restore_hp(D1, HP_zone1);			//Function setting up Box object 'HP_zone1' as a healing area
+			D1.draw();
 
-			D1.controller();
+			//D1.controller();
 
 			
 
@@ -479,7 +494,7 @@ int main()
 
 			//D1_Area.draw();
 
-			draw_sprite(id_drone, D1.get_x(), D1.get_y(), D1.get_theta(), 0.45);
+			
 
 			draw_sprite(id_laser, D1.get_x(), D1.get_y(), D1.get_aim() + D1.get_theta(), 1.0);
 
