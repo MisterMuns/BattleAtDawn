@@ -29,7 +29,6 @@ private:
 	double delta_time;
 	int power_count, power_time;
 	int index, GS[N_GS];			//Game Pad Controller Variables
-
 	
 
 public:
@@ -68,6 +67,7 @@ Drone::Drone(double _x, double _y, double _theta)
 	delta_time = 0.1;
 	in_roll = 0.0;
 	hp = 100;							//Drone starts at full health (100 health points = 100 pixels)
+	aim_angle = 0;
 
 	index = 1;
 
@@ -116,6 +116,7 @@ void Drone::set_delta_time()
 	}
 
 }
+
 
 void Drone::inputs()
 {
@@ -350,6 +351,54 @@ void Box::draw()
 	triangle(xt, yt, R, G, B);
 }
 
+class Bullet
+{
+private:
+	double x;
+	double y;
+	double theta;
+	int id_bullet;
+	bool state;			//Shot or not shot yet? Affects trajectory
+	double speed;		//Bullet Speed
+
+public:
+	Bullet();
+	void set_initial(double _x, double _y, double _theta);	//Initialize starting position of bullet
+	void trajectory();
+	bool& get_state();
+};
+
+Bullet::Bullet()
+{
+	x = 0;
+	y = 0;
+	theta = 0;
+	create_sprite("cat.png", id_bullet);
+	state = 0;
+	speed = 10;
+}
+
+void Bullet::set_initial(double _x, double _y, double _theta)
+{
+	x = _x;
+	y = _y;
+	theta = _theta;
+}
+
+bool &Bullet::get_state()
+{
+	return state;
+}
+
+void Bullet::trajectory()
+{	
+
+	x = x + speed*cos(theta);
+	y = y + speed*sin(theta);
+
+	draw_sprite(id_bullet, x, y, theta, 1.0);
+}
+
 void restore_hp(Drone& name1, Box name2);
 void collision(Drone &A, Box Drone, Box Rigid);
 
@@ -364,6 +413,7 @@ int main()
 
 		Drone D1(400, 300, 0);
 		Box Rigid[5];
+		Bullet bullet[5];
 
 		int id_drone;
 		create_sprite("FrontView.png", id_drone);
@@ -394,6 +444,17 @@ int main()
 				collision(D1, D1_Area, Rigid[i]);
 			}
 			
+			if (KEY('O'))
+			{
+			bullet[0].set_initial(D1.get_x(), D1.get_y(), D1.get_aim());
+			bullet[0].get_state() = 1;
+			}
+			if (bullet[0].get_state() == 1)
+			{
+				bullet[0].trajectory();
+			}
+
+			cout << D1.get_aim() << endl;
 
 			D1.set_delta_time();
 			D1.inputs();
@@ -402,7 +463,7 @@ int main()
 			D1.power();
 			restore_hp(D1, HP_zone1);			//Function setting up Box object 'HP_zone1' as a healing area
 
-			//D1.controller();
+			D1.controller();
 
 			
 
@@ -420,7 +481,7 @@ int main()
 
 			draw_sprite(id_drone, D1.get_x(), D1.get_y(), D1.get_theta(), 0.45);
 
-			draw_sprite(id_laser, D1.get_x(), D1.get_y(), D1.get_aim(), 1.0);
+			draw_sprite(id_laser, D1.get_x(), D1.get_y(), D1.get_aim() + D1.get_theta(), 1.0);
 
 			update();
 		}
