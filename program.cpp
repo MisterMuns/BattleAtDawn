@@ -17,7 +17,7 @@ const double gravity = 9.81;
 
 class Drone
 {
-private:
+protected:
 	double mass;
 	double hp;							//Drone health (100 pixels) - used as reference between green bar and damage received
 	double aim_angle;
@@ -25,6 +25,7 @@ private:
 	double y, y_dot, y_dotdot;
 	double theta;
 	double in_thrust, out_thrust;
+	double acceleration;
 	double in_roll;
 	double delta_time;
 	int power_count, power_time;
@@ -35,8 +36,6 @@ public:
 	
 	Drone(double _x, double _y, double _theta);
 	void calculate();
-	
-	//void set_inputs();
 
 	double get_x();
 	double get_y();
@@ -46,9 +45,10 @@ public:
 	void inputs();
 	void stability();
 	void power();
-	void controller();
+	//void controller();
 	void bounce();
 	double get_aim();
+	bool get_gamepad_shoot();
 	void draw();
 
 };
@@ -69,6 +69,7 @@ Drone::Drone(double _x, double _y, double _theta)
 	in_roll = 0.0;
 	hp = 100;							//Drone starts at full health (100 health points = 100 pixels)
 	aim_angle = 0;
+	acceleration = 9.5;
 
 	index = 1;
 	create_sprite("FrontView.png", id_drone);
@@ -101,7 +102,7 @@ void Drone::calculate()
 	y_dot = y_dot + y_dotdot * delta_time;
 	y = y + y_dot;
 
-	x_dotdot = -9.5*gravity * sin(theta);
+	x_dotdot =  -acceleration * gravity * sin(theta);
 	x_dot = x_dot + x_dotdot * delta_time;
 	x = x + x_dot;
 }
@@ -164,13 +165,19 @@ void Drone::controller()
 
 	
 
-	/*
+	
 	for(int i=0;i<N_GS;i++) 
 	{
 	cout << GS[i] << " ";
 	}
 	cout << "\n";
-	*/
+	
+}
+
+bool Drone::get_gamepad_shoot()
+{
+	gamepad_state(GS, index);
+	return GS[9]/(1.0e6);
 }
 
 double Drone::get_aim()
@@ -208,8 +215,6 @@ void Drone::stability()
 
 	}
 
-
-
 }
 
 void Drone::power()
@@ -234,7 +239,6 @@ void Drone::power()
 		out_thrust = in_thrust;
 	}
 }
-
 
 void Drone::bounce()
 {
@@ -284,9 +288,79 @@ void Drone::draw()
 
 class Enemy :public Drone
 {
+private:
+	double dist_x;
+	double dist_y;
+	double radius, radius_limit;
+	
 public:
-	Enemy(double _x, double _y, double _theta) : Drone(0, 0, 0) {}
+	Enemy(double _x, double _y, double _theta) : Drone(_x, _y, _theta) {}
+	void inputs(double player_x, double player_y);
+	void stability();
+	void calculate();
+
 };
+
+void Enemy::inputs(double player_x, double player_y)
+{
+	dist_x = player_x - x;
+	dist_y = player_y - y;
+	radius = pow(pow(dist_x, 2) + pow(dist_y, 2),0.5);
+	radius_limit = 600;
+	
+	if (radius > radius_limit)
+	{
+		if (dist_y > 0)
+		{
+			in_thrust += 2.00;
+		}
+		else if (dist_y < 0)
+		{
+			in_thrust -= 2.00;
+		}
+
+		if (dist_x < 0)
+		{
+			in_roll += 0.020;
+		}
+		if (dist_x > 0)
+		{
+			in_roll -= 0.020;
+		}
+	} else if (radius < radius_limit)
+	{
+		in_roll = in_roll * 0.96;
+		out_thrust = 0.95 * in_thrust + 49.25;
+	}
+
+	out_thrust = in_thrust;
+
+}
+
+void Enemy::stability()
+{
+	if (in_thrust <= 0) in_thrust = 0;
+	if (in_roll > 0.300) in_roll = 0.300;
+	if (in_roll < -0.300) in_roll = -0.300;
+
+	theta = in_roll;
+
+	theta = 0.99 * theta;
+	x_dot = x_dot/(dist_x + radius_limit);
+	out_thrust = 0.95 * in_thrust + 49.25;
+	y_dot = y_dot /(dist_y + radius_limit);
+}
+
+void Enemy::calculate()
+{
+	y_dotdot = -((1.0 / mass) * (-out_thrust) + gravity);
+	y_dot = y_dot + y_dotdot * delta_time;
+	y = y + y_dot;
+
+	x_dotdot = -50 * gravity * sin(theta);
+	x_dot = x_dot + x_dotdot * delta_time;
+	x = x + x_dot;
+}
 
 class Box
 {
@@ -373,12 +447,14 @@ private:
 	int id_bullet;
 	bool state;			//Shot or not shot yet? Affects trajectory
 	double speed;		//Bullet Speed
+	int duration;
+
 
 public:
 	Bullet();
+	bool& get_state();
 	void set_initial(double _x, double _y, double _theta);	//Initialize starting position of bullet
 	void trajectory();
-	bool& get_state();
 };
 
 Bullet::Bullet()
@@ -386,9 +462,10 @@ Bullet::Bullet()
 	x = 0;
 	y = 0;
 	theta = 0;
-	create_sprite("cat.png", id_bullet);
+	create_sprite("Bullet.png", id_bullet);
 	state = 0;
 	speed = 10;
+	duration = 0;
 }
 
 void Bullet::set_initial(double _x, double _y, double _theta)
@@ -405,11 +482,25 @@ bool &Bullet::get_state()
 
 void Bullet::trajectory()
 {	
+	if (state == 1)
+	{
+		x = x + speed * cos(theta);
+		y = y + speed * sin(theta);
 
-	x = x + speed*cos(theta);
-	y = y + speed*sin(theta);
+		draw_sprite(id_bullet, x, y, theta, 0.25);
 
-	draw_sprite(id_bullet, x, y, theta, 1.0);
+		duration++;
+
+		if (duration > 200)
+		{
+			state = 0;
+			duration = 0;
+			x = 0;
+			y = 0;
+			theta = 0;
+		}
+	}
+
 }
 
 void restore_hp(Drone& name1, Box name2);
@@ -422,14 +513,15 @@ int main()
 	for (;;)
 	{
 		bool trigger = 0;
-
+		int shoot_delay;
 
 		Drone D1(400, 300, 0);
 		Box Rigid[5];
-		Bullet bullet[5];
+		Bullet bullet[10];
 
-		Enemy D2(0,0,0);
+		Enemy D2(300,300,0);
 
+		
 
 
 		int id_laser;
@@ -438,6 +530,9 @@ int main()
 		for (;;)
 		{
 			clear();
+
+			Box Background(300, 300, 2000, 1000, 0.8, 0.8, 1.0);
+			Background.draw();
 
 			Box D1_Area(D1.get_x(), D1.get_y(), 120, 40, 1.0, 1.0, 1.0);
 
@@ -450,25 +545,34 @@ int main()
 			Box D1_HPg(D1.get_x() - ((100 - D1.get_hp()) / 2), D1.get_y() + 40, D1.get_hp(), 10, 0.0, 1.0, 0.0);	//This assumes HP is set at 100, not flexible
 			D1_HPg.draw();
 
-
 			for (int i = 0; i < 5; i++)
 			{
 				Rigid[i] = Box(200 + i*200, 500, 20, 200, 0.0, 0.0, 0.0);
 				Rigid[i].draw();
 				collision(D1, D1_Area, Rigid[i]);
 			}
-			
-			if (KEY('O'))
+
+			for (int i = 0; i < 10; i++)
 			{
-			bullet[0].set_initial(D1.get_x(), D1.get_y(), D1.get_aim());
-			bullet[0].get_state() = 1;
-			}
-			if (bullet[0].get_state() == 1)
-			{
-				bullet[0].trajectory();
+
+				if (bullet[i].get_state() == 1)
+				{
+					bullet[i].trajectory();
+					continue;
+				}
+
+				if (shoot_delay > 10 && bullet[i].get_state() == 0)
+				{
+					bullet[i].set_initial(D1.get_x(), D1.get_y(), D1.get_aim());
+					bullet[i].get_state() = 1;
+					shoot_delay = 0;
+				}
 			}
 
-			cout << D1.get_aim() << endl;
+			if (KEY('O') || D1.get_gamepad_shoot())
+			{
+				shoot_delay++;
+			}
 
 			D1.set_delta_time();
 			D1.inputs();
@@ -477,10 +581,17 @@ int main()
 			D1.power();
 			restore_hp(D1, HP_zone1);			//Function setting up Box object 'HP_zone1' as a healing area
 			D1.draw();
+			draw_sprite(id_laser, D1.get_x(), D1.get_y(), D1.get_aim() + D1.get_theta(), 1.0);
 
-			//D1.controller();
+			D1.controller();
 
 			
+			//Enemy Class
+			D2.set_delta_time();
+			D2.inputs(D1.get_x(), D1.get_y());
+			D2.calculate();
+			D2.stability();
+			D2.draw();
 
 
 			if (D1.get_hp() == 0) {											//Status check, restart drone simulation if HP = 0
@@ -494,9 +605,8 @@ int main()
 
 			//D1_Area.draw();
 
+			if (KEY('R')) break;			//Restart if lost
 			
-
-			draw_sprite(id_laser, D1.get_x(), D1.get_y(), D1.get_aim() + D1.get_theta(), 1.0);
 
 			update();
 		}
