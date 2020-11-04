@@ -33,7 +33,7 @@ protected:
 	int id_drone;
 
 public:
-	
+	Drone() { ; }
 	Drone(double _x, double _y, double _theta);
 	void calculate();
 
@@ -45,7 +45,7 @@ public:
 	void inputs();
 	void stability();
 	void power();
-	//void controller();
+	void controller();
 	void bounce();
 	double get_aim();
 	bool get_gamepad_shoot();
@@ -294,12 +294,14 @@ private:
 	double radius, radius_limit;
 	
 public:
+	Enemy() { ; }
 	Enemy(double _x, double _y, double _theta) : Drone(_x, _y, _theta) {}
 	void inputs(double player_x, double player_y);
 	void stability();
 	void calculate();
 
 };
+
 
 void Enemy::inputs(double player_x, double player_y)
 {
@@ -393,8 +395,6 @@ Box::Box()
 
 Box::Box(int _x, int _y, int _x_length, int _y_length, double _r, double _g, double _b)
 {
-
-
 	for (int i = 0; i < 3; i++)
 	{
 		R[i] = _r;
@@ -455,6 +455,8 @@ public:
 	bool& get_state();
 	void set_initial(double _x, double _y, double _theta);	//Initialize starting position of bullet
 	void trajectory();
+	double get_x() { return x; }
+	double get_y() { return y; }
 };
 
 Bullet::Bullet()
@@ -505,6 +507,8 @@ void Bullet::trajectory()
 
 void restore_hp(Drone& name1, Box name2);
 void collision(Drone &A, Box Drone, Box Rigid);
+void Health_Bar(Enemy enemy, Box black, Box green);
+void getting_shot(Drone &Enemy_Drone, Box Enemy_Area, Bullet bullet);
 
 int main()
 {
@@ -519,10 +523,11 @@ int main()
 		Box Rigid[5];
 		Bullet bullet[10];
 
-		Enemy D2(300,300,0);
+		Box D2_HPg(0, 0, 1, 1, 0.0, 0.0, 0.0);
+		Box D2_HPb(0, 0, 1, 1, 0.0, 0.0, 0.0);
 
-		
-
+		Enemy E_Array[1];
+		E_Array[0] = Enemy(300, 300, 0);
 
 		int id_laser;
 		create_sprite("Laser.png", id_laser);
@@ -535,6 +540,9 @@ int main()
 			Background.draw();
 
 			Box D1_Area(D1.get_x(), D1.get_y(), 120, 40, 1.0, 1.0, 1.0);
+			Box E_Area[1];
+			
+			E_Area[0] = Box(E_Array[0].get_x(), E_Array[0].get_y(), 120, 40, 1.0, 1.0, 1.0);
 
 			Box HP_zone1(700, 500, 200, 200, 0.0, 0.5, 0.0);					//Box object that will be a healing area
 			HP_zone1.draw();
@@ -545,11 +553,16 @@ int main()
 			Box D1_HPg(D1.get_x() - ((100 - D1.get_hp()) / 2), D1.get_y() + 40, D1.get_hp(), 10, 0.0, 1.0, 0.0);	//This assumes HP is set at 100, not flexible
 			D1_HPg.draw();
 
+
+			Health_Bar(E_Array[0], D2_HPb, D2_HPg);
+			
+
 			for (int i = 0; i < 5; i++)
 			{
 				Rigid[i] = Box(200 + i*200, 500, 20, 200, 0.0, 0.0, 0.0);
 				Rigid[i].draw();
 				collision(D1, D1_Area, Rigid[i]);
+				collision(E_Array[0], E_Area[0], Rigid[i]);
 			}
 
 			for (int i = 0; i < 10; i++)
@@ -569,10 +582,25 @@ int main()
 				}
 			}
 
-			if (KEY('O') || D1.get_gamepad_shoot())
+			for (int i = 0; i < 10; i++)
+			{
+				getting_shot(E_Array[0], E_Area[0], bullet[i]);
+			}
+
+			
+
+			if (KEY('O'))
 			{
 				shoot_delay++;
 			}
+			/*
+			if (D1.get_gamepad_shoot() == 1)
+			{
+				shoot_delay++;
+			}
+			*/
+			
+
 
 			D1.set_delta_time();
 			D1.inputs();
@@ -583,15 +611,15 @@ int main()
 			D1.draw();
 			draw_sprite(id_laser, D1.get_x(), D1.get_y(), D1.get_aim() + D1.get_theta(), 1.0);
 
-			D1.controller();
+			//D1.controller();
 
 			
 			//Enemy Class
-			D2.set_delta_time();
-			D2.inputs(D1.get_x(), D1.get_y());
-			D2.calculate();
-			D2.stability();
-			D2.draw();
+			E_Array[0].set_delta_time();
+			E_Array[0].inputs(D1.get_x(), D1.get_y());
+			E_Array[0].calculate();
+			E_Array[0].stability();
+			E_Array[0].draw();
 
 
 			if (D1.get_hp() == 0) {											//Status check, restart drone simulation if HP = 0
@@ -648,6 +676,14 @@ void collision(Drone &A, Box Drone, Box Rigid)
 	}
 }
 
+void getting_shot(Drone &Enemy_Drone,Box Enemy_Area,Bullet bullet)
+{
+	if (bullet.get_x() < Enemy_Area.get_right() && bullet.get_x() > Enemy_Area.get_left() && bullet.get_y() < Enemy_Area.get_top() && bullet.get_y() > Enemy_Area.get_bottom())
+	{
+		Enemy_Drone.bounce();
+	}
+}
+
 void restore_hp(Drone& name1, Box name2) {
 	//IMPROVE: Can add extra variable later that is globally set for all health zones, regen less health at harder difficulty
 	//IMPROVE: Can add a cap of how much hp can be regenerated for the given Box &name2
@@ -658,4 +694,14 @@ void restore_hp(Drone& name1, Box name2) {
 			name1.get_hp() += 1;
 		}
 	}
+}
+
+
+void Health_Bar(Enemy enemy, Box black, Box green)
+{
+	black = Box(enemy.get_x(), (enemy.get_y() + 40), 106, 16, 0.0, 0.0, 0.0);	//Black outline of the HP bar
+	black.draw();
+
+	green = Box(enemy.get_x() - ((100 - enemy.get_hp()) / 2), enemy.get_y() + 40, enemy.get_hp(), 10, 0.0, 1.0, 0.0);	//This assumes HP is set at 100, not flexible
+	green.draw();
 }
