@@ -38,7 +38,9 @@ public:
 	void calculate();
 
 	double get_x();
+	double get_x_dot() { return x_dot; }
 	double get_y();
+	double get_y_dot() { return y_dot; }
 	double get_theta();
 	double& get_hp();					//Used as an access function for hp variable, return reference to get and set variable
 	void set_delta_time();
@@ -546,14 +548,14 @@ void map::draw_layer(Drone& name1) {
 	//need to adjust x and y of sprite based on drone object, MAKE SURE EQUATIONS ARE GOOD!
 
 	if (name1.get_x() >= 1050) {		//1050 and 350 to start smooth scrolling before drone hits boundary
-		layer_x -= 6.0 * df;					//***add depth factor***
+		layer_x -= name1.get_x_dot()*df;					//***add depth factor***
 	}
-	else if (name1.get_x() <= 350) layer_x += 5 * df;
+	else if (name1.get_x() <= 350) layer_x -= name1.get_x_dot() * df;
 
 	if (name1.get_y() >= 750) {		//1050 and 350 to start smooth scrolling before drone hits boundary
-		layer_y -= 6.0 * df;				//***add depth factor***
+		layer_y -= name1.get_y_dot()*df;				//***add depth factor***
 	}
-	else if (name1.get_y() <= 250) layer_y += 5 * df;
+	else if (name1.get_y() <= 250) layer_y -= name1.get_y_dot() * df;
 
 	draw_sprite(id_layer, layer_x, layer_y, 0, layer_scale);
 }
