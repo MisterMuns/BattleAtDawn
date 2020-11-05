@@ -96,15 +96,27 @@ double& Drone::get_hp()
 	return hp;
 }
 
-void Drone::calculate()
+void Drone::calculate()										
 {
 	y_dotdot = -((1.0 / mass) * (-out_thrust) + gravity);
 	y_dot = y_dot + y_dotdot * delta_time;
-	y = y + y_dot;
+	if (y + y_dot >= 800) {										//changed this so drone no longer moves past y pixels: 200-800
+		y = 800;
+	}
+	else if (y + y_dot <= 200) {
+		y = 200;
+	}
+	else y = y + y_dot;
+
 
 	x_dotdot =  -acceleration * gravity * sin(theta);
 	x_dot = x_dot + x_dotdot * delta_time;
-	x = x + x_dot;
+	if (x + x_dot >= 1100 ) {									//changed this so drone no longer moves past x pixels: 300-1100
+		x = 1100;
+	} else if (x + x_dot <= 300) {
+		x = 300;
+	} else x = x + x_dot;
+
 }
 
 void Drone::set_delta_time()
@@ -505,6 +517,57 @@ void Bullet::trajectory()
 
 }
 
+//map class using Parallax technique.
+class map { //This class creates the layer objects that the environment is composed of
+
+	int id_layer;		//id of the layer object that is set when constructor is called
+	double layer_x;	//layer object's x position
+	double layer_y;	//layer object's y position
+	double layer_scale;
+	double df;			//depth factor, the depth of the layer will influence scroll rate
+
+public:
+	map(char layer_file_name[], double depth_factor, double layerX, double layerY, double scale);		//constructor to initialize the layer object, called outside of the infinite draw loop
+	void draw_layer(Drone& name1);			//this will contain "draw_sprite()" and manipulate x and y of layer to track drone object properly.Called inside infinite draw loop
+	double get_layerX();
+	double get_layerY();
+
+};
+
+map::map(char layer_file_name[], double depth_factor, double layerX, double layerY, double scale) {		//takes the file name for this object, to create sprite
+	layer_x = layerX;
+	layer_y = layerY;
+	layer_scale = scale;
+	df = depth_factor;
+	create_sprite(layer_file_name, id_layer);
+}
+
+void map::draw_layer(Drone& name1) {
+	//need to adjust x and y of sprite based on drone object, MAKE SURE EQUATIONS ARE GOOD!
+
+	if (name1.get_x() >= 1050) {		//1050 and 350 to start smooth scrolling before drone hits boundary
+		layer_x -= 6.0 * df;					//***add depth factor***
+	}
+	else if (name1.get_x() <= 350) layer_x += 5 * df;
+
+	if (name1.get_y() >= 750) {		//1050 and 350 to start smooth scrolling before drone hits boundary
+		layer_y -= 6.0 * df;				//***add depth factor***
+	}
+	else if (name1.get_y() <= 250) layer_y += 5 * df;
+
+	draw_sprite(id_layer, layer_x, layer_y, 0, layer_scale);
+}
+
+double map::get_layerX() {
+	return layer_x;
+}
+
+double map::get_layerY() {
+	return layer_y;
+}
+
+
+
 void restore_hp(Drone& name1, Box name2);
 void collision(Drone &A, Box Drone, Box Rigid);
 void Health_Bar(Enemy enemy, Box black, Box green);
@@ -523,6 +586,10 @@ int main()
 		Box Rigid[5];
 		Bullet bullet[10];
 
+		//(1) - Initializing of Layers
+		map Layer1("Layer1.png", 0.5, 700.0, 500, 1.8);		//Creating Layer1 object of the map class, attaching the appropriate image and depth factor (df)
+		map Layer4("Layer4.png", 0.6, 700.0, 100, 1.65);	//arguments: (image file, its speed relative to other layers (df), x and y position in window relative to other layers, image scaling)
+
 		Box D2_HPg(0, 0, 1, 1, 0.0, 0.0, 0.0);
 		Box D2_HPb(0, 0, 1, 1, 0.0, 0.0, 0.0);
 
@@ -536,15 +603,19 @@ int main()
 		{
 			clear();
 
-			Box Background(300, 300, 2000, 1000, 0.8, 0.8, 1.0);
-			Background.draw();
+			//Box Background(300, 300, 2000, 1000, 0.8, 0.8, 1.0);
+			//Background.draw();
+			//(1) - Drawing of Layers
+			Layer1.draw_layer(D1);				//Updating background according to D1 positioning, absolute background so goes first
+			Layer4.draw_layer(D1);
+
 
 			Box D1_Area(D1.get_x(), D1.get_y(), 120, 40, 1.0, 1.0, 1.0);
 			Box E_Area[1];
 			
 			E_Area[0] = Box(E_Array[0].get_x(), E_Array[0].get_y(), 120, 40, 1.0, 1.0, 1.0);
 
-			Box HP_zone1(700, 500, 200, 200, 0.0, 0.5, 0.0);					//Box object that will be a healing area
+			Box HP_zone1(Layer4.get_layerX(), Layer4.get_layerY(), 200, 200, 0.0, 0.5, 0.0);					//Box object that will be a healing area
 			HP_zone1.draw();
 
 			Box D1_HPb(D1.get_x(), (D1.get_y() + 40), 106, 16, 0.0, 0.0, 0.0);	//Black outline of the HP bar
@@ -559,7 +630,7 @@ int main()
 
 			for (int i = 0; i < 5; i++)
 			{
-				Rigid[i] = Box(200 + i*200, 500, 20, 200, 0.0, 0.0, 0.0);
+				Rigid[i] = Box((Layer4.get_layerX() - 500) + i * 200, Layer4.get_layerY(), 20, 200, 0.0, 0.0, 0.0);  //-500 in x position relative to Layer4
 				Rigid[i].draw();
 				collision(D1, D1_Area, Rigid[i]);
 				collision(E_Array[0], E_Area[0], Rigid[i]);
@@ -588,6 +659,7 @@ int main()
 			}
 
 			
+
 
 			if (KEY('O'))
 			{
@@ -666,6 +738,8 @@ int main()
 
 	return 0;
 }
+
+
 
 void collision(Drone &A, Box Drone, Box Rigid)
 {
