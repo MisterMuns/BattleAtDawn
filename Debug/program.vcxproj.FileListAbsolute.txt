@@ -8,3 +8,5 @@ D:\Concordia University\Courses\10. Fall 2020\MECH415\MECH_415_assignment3\Drone
 D:\Concordia University\Courses\10. Fall 2020\MECH415\MECH_415_assignment3\Drone Project\Debug\program.pdb
 C:\Users\Muneeb\Documents\GitHub\QuadSimYuLaTo\Debug\program.exe
 C:\Users\Muneeb\Documents\GitHub\QuadSimYuLaTo\Debug\program.pdb
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\Debug\program.exe
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\Debug\program.pdb

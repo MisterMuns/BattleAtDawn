@@ -1,2 +1,20 @@
 ﻿  program.cpp
-  program.vcxproj -> C:\Users\Muneeb\Documents\GitHub\QuadSimYuLaTo\.\Debug\program.exe
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(635,36): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(635,24): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(638,56): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(638,36): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(640,55): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(640,34): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(645,39): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(645,23): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(648,81): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(648,66): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(648,26): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(657,76): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(657,48): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(800,44): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(800,25): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(803,92): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(803,74): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(803,28): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+  program.vcxproj -> C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\.\Debug\program.exe

@@ -39,7 +39,7 @@ public:
 
 	double get_x();
 	double get_x_dot() { return x_dot; }
-	double get_y();
+	double& get_y();
 	double get_y_dot() { return y_dot; }
 	double get_theta();
 	double& get_hp();					//Used as an access function for hp variable, return reference to get and set variable
@@ -83,7 +83,7 @@ double Drone::get_x()
 	return x;
 }
 
-double Drone::get_y()
+double& Drone::get_y()
 {
 	return y;
 }
@@ -313,6 +313,7 @@ public:
 	void inputs(double player_x, double player_y);
 	void stability();
 	void calculate();
+	void map_rel(double layer_x, double layer_y, Drone name1);
 
 };
 
@@ -322,7 +323,8 @@ void Enemy::inputs(double player_x, double player_y)
 	dist_x = player_x - x;
 	dist_y = player_y - y;
 	radius = pow(pow(dist_x, 2) + pow(dist_y, 2),0.5);
-	radius_limit = 600;
+	radius_limit = 400;
+	
 	
 	if (radius > radius_limit)
 	{
@@ -349,6 +351,7 @@ void Enemy::inputs(double player_x, double player_y)
 		out_thrust = 0.95 * in_thrust + 49.25;
 	}
 
+	
 	out_thrust = in_thrust;
 
 }
@@ -376,6 +379,22 @@ void Enemy::calculate()
 	x_dotdot = -50 * gravity * sin(theta);
 	x_dot = x_dot + x_dotdot * delta_time;
 	x = x + x_dot;
+}
+
+void Enemy::map_rel(double layer_x, double layer_y, Drone name1)
+{
+
+	if (name1.get_x() >= 1050) {		//1050 and 350 to start smooth scrolling before drone hits boundary
+		x -= name1.get_x_dot() * 0.65;					//***add depth factor***
+	}
+	else if (name1.get_x() <= 350) x -= name1.get_x_dot() * 0.65;
+
+	if (name1.get_y() >= 500) {		//1050 and 350 to start smooth scrolling before drone hits boundary
+		name1.get_y() = 500;
+		y -= name1.get_y_dot() * 0.65;				//***add depth factor***
+	}
+	else if (name1.get_y() <= 250) y -= name1.get_y_dot() * 0.65;
+
 }
 
 class Box
@@ -552,7 +571,8 @@ void map::draw_layer(Drone& name1) {
 	}
 	else if (name1.get_x() <= 350) layer_x -= name1.get_x_dot() * df;
 
-	if (name1.get_y() >= 750) {		//1050 and 350 to start smooth scrolling before drone hits boundary
+	if (name1.get_y() >= 500) {		//1050 and 350 to start smooth scrolling before drone hits boundary
+		name1.get_y() = 500;
 		layer_y -= name1.get_y_dot()*df;				//***add depth factor***
 	}
 	else if (name1.get_y() <= 250) layer_y -= name1.get_y_dot() * df;
@@ -619,6 +639,8 @@ int main()
 
 			Box HP_zone1(Layer4.get_layerX(), Layer4.get_layerY(), 200, 200, 0.0, 0.5, 0.0);					//Box object that will be a healing area
 			HP_zone1.draw();
+
+			E_Array[0].map_rel(Layer4.get_layerX(), Layer4.get_layerY(), D1);
 
 			Box D1_HPb(D1.get_x(), (D1.get_y() + 40), 106, 16, 0.0, 0.0, 0.0);	//Black outline of the HP bar
 			D1_HPb.draw();
