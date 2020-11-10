@@ -36,7 +36,7 @@ public:
 	Drone() { ; }
 	Drone(double _x, double _y, double _theta);
 	void calculate();
-
+	void reset(double _x, double _y, double _theta);
 	double get_x();
 	double get_x_dot() { return x_dot; }
 	double& get_y();
@@ -52,7 +52,7 @@ public:
 	double get_aim();
 	bool get_gamepad_shoot();
 	void draw();
-
+	virtual ~Drone() { ; }
 };
 
 Drone::Drone(double _x, double _y, double _theta)
@@ -75,7 +75,31 @@ Drone::Drone(double _x, double _y, double _theta)
 
 	index = 1;
 	create_sprite("FrontView.png", id_drone);
+	power_count = 0;
 
+}
+
+void Drone::reset(double _x, double _y, double _theta)
+{
+	mass = 5.0;
+	x = _x;
+	x_dot = 0.0;
+	x_dotdot = 0.0;
+	y = _y;
+	y_dot = 0.0;
+	y_dotdot = 0.0;
+	theta = _theta;
+	in_thrust = 49.25;
+	out_thrust = 0.0;
+	delta_time = 0.1;
+	in_roll = 0.0;
+	hp = 100;							//Drone starts at full health (100 health points = 100 pixels)
+	aim_angle = 0;
+	acceleration = 9.5;
+
+	index = 1;
+	create_sprite("FrontView.png", id_drone);
+	power_count = 0;
 }
 
 double Drone::get_x()
@@ -100,6 +124,7 @@ double& Drone::get_hp()
 
 void Drone::calculate()										
 {
+	out_thrust = in_thrust;
 	y_dotdot = -((1.0 / mass) * (-out_thrust) + gravity);
 	y_dot = y_dot + y_dotdot * delta_time;
 	if (y + y_dot >= 800) {										//changed this so drone no longer moves past y pixels: 200-800
@@ -315,6 +340,8 @@ public:
 	void calculate();
 	void map_rel(Drone name1);
 	double get_aim(Drone player);
+	double get_radius() { return radius; }
+	virtual ~Enemy() { ; }
 
 };
 
@@ -429,7 +456,7 @@ public:
 	Box();
 	Box(int _x, int _y, int _x_length, int _y_length, double _r, double _g, double _b);
 	void draw();
-
+	void reset(int _x, int _y, int _x_length, int _y_length, double _r, double _g, double _b);
 	double get_left() { return x_re[0]; }
 	double get_right() { return x_re[1]; }
 	double get_top() { return y_re[2]; }
@@ -490,6 +517,30 @@ void Box::draw()
 	triangle(xt, yt, R, G, B);
 }
 
+void Box::reset(int _x, int _y, int _x_length, int _y_length, double _r, double _g, double _b)
+{
+	for (int i = 0; i < 3; i++)
+	{
+		R[i] = _r;
+		G[i] = _g;
+		B[i] = _b;
+	}
+
+	x = _x;
+	y = _y;
+	x_length = _x_length;
+	y_length = _y_length;
+
+	x_re[0] = x - x_length / 2;
+	y_re[0] = y - y_length / 2;
+	x_re[1] = x + x_length / 2;
+	y_re[1] = y - y_length / 2;
+	x_re[2] = x + x_length / 2;
+	y_re[2] = y + y_length / 2;
+	x_re[3] = x - x_length / 2;
+	y_re[3] = y + y_length / 2;
+}
+
 class Bullet
 {
 private:
@@ -510,6 +561,7 @@ public:
 	double get_x() { return x; }
 	double get_y() { return y; }
 	void map_rel(Drone name1);
+	virtual ~Bullet() { ; }
 };
 
 Bullet::Bullet()
@@ -635,32 +687,55 @@ void restore_hp(Drone& name1, Box name2);
 void collision(Drone &A, Box Drone, Box Rigid);
 void Health_Bar(Enemy enemy, Box black, Box green);
 void getting_shot(Drone &Enemy_Drone, Box Enemy_Area, Bullet &bullet);
+const int nb_enemy = 1;
 
 int main()
 {
 	initialize_graphics();
+	Drone D1(0, 0, 0);
+	Box D1_Area(0, 0, 120, 40, 1.0, 1.0, 1.0);
+	Box E_Area[nb_enemy];
+
+	Box Rigid[5];
+	Box HP_zone1(0, 0, 200, 200, 0.0, 0.5, 0.0);
+	Bullet bullet[10];
+
+	Box D1_HPb(D1.get_x(), (D1.get_y() + 40), 106, 16, 0.0, 0.0, 0.0);	//Black outline of the HP bar
+	Box D1_HPg(D1.get_x() - ((100 - D1.get_hp()) / 2), D1.get_y() + 40, D1.get_hp(), 10, 0.0, 1.0, 0.0);
+
+	Box D2_HPg[nb_enemy];
+	Box D2_HPb[nb_enemy];
+
+	Enemy E_Array[nb_enemy];
+
+	Box restart(0, 0, 400, 200, 0.0, 0.0, 0.0);
+
 
 	for (;;)
 	{
 		bool trigger = 0;
 		int shoot_delay;
 
-		Drone D1(400, 300, 0);
-		Box Rigid[5];
-		Bullet bullet[10];
-
+		D1.reset(400, 300, 0);
+		
+		for (int i = 0; i < nb_enemy; i++)
+		{
+			E_Array[i].reset(801 + 50*i, 300 + 60*i, 0);
+		}
+		
 		//(1) - Initializing of Layers
 		map Layer1("Layer1.png", 0.5, 700.0, 500, 1.8);		//Creating Layer1 object of the map class, attaching the appropriate image and depth factor (df)
 		map Layer4("Layer4.png", 0.6, 700.0, 100, 1.65);	//arguments: (image file, its speed relative to other layers (df), x and y position in window relative to other layers, image scaling)
 
-		Box D2_HPg(0, 0, 1, 1, 0.0, 0.0, 0.0);
-		Box D2_HPb(0, 0, 1, 1, 0.0, 0.0, 0.0);
-
-		Enemy E_Array[1];
-		E_Array[0] = Enemy(300, 300, 0);
 
 		int id_laser;
 		create_sprite("Laser.png", id_laser);
+
+		for (int i = 0; i < 10; i++)
+		{
+			bullet[i].get_state() = 0;
+			shoot_delay = 0;
+		}
 
 		for (;;)
 		{
@@ -673,32 +748,43 @@ int main()
 			Layer4.draw_layer(D1);
 
 
-			Box D1_Area(D1.get_x(), D1.get_y(), 120, 40, 1.0, 1.0, 1.0);
-			Box E_Area[1];
+			D1_Area.reset(D1.get_x(), D1.get_y(), 120, 40, 1.0, 1.0, 1.0);
 			
-			E_Area[0] = Box(E_Array[0].get_x(), E_Array[0].get_y(), 120, 40, 1.0, 1.0, 1.0);
+			for (int i = 0; i < nb_enemy; i++)
+			{
+				E_Area[i].reset(E_Array[i].get_x(), E_Array[i].get_y(), 120, 40, 1.0, 1.0, 1.0);
+			}
+			
 
-			Box HP_zone1(Layer4.get_layerX(), Layer4.get_layerY(), 200, 200, 0.0, 0.5, 0.0);					//Box object that will be a healing area
+			HP_zone1.reset(Layer4.get_layerX(), Layer4.get_layerY(), 200, 200, 0.0, 0.5, 0.0);					//Box object that will be a healing area
 			HP_zone1.draw();
 
-			E_Array[0].map_rel(D1);
+			for (int i = 0; i < nb_enemy; i++)
+			{
+				E_Array[i].map_rel(D1);
+			}
+			
 
-			Box D1_HPb(D1.get_x(), (D1.get_y() + 40), 106, 16, 0.0, 0.0, 0.0);	//Black outline of the HP bar
+			D1_HPb.reset(D1.get_x(), (D1.get_y() + 40), 106, 16, 0.0, 0.0, 0.0);	//Black outline of the HP bar
 			D1_HPb.draw();
 
-			Box D1_HPg(D1.get_x() - ((100 - D1.get_hp()) / 2), D1.get_y() + 40, D1.get_hp(), 10, 0.0, 1.0, 0.0);	//This assumes HP is set at 100, not flexible
+			D1_HPg.reset(D1.get_x() - ((100 - D1.get_hp()) / 2), D1.get_y() + 40, D1.get_hp(), 10, 0.0, 1.0, 0.0);	//This assumes HP is set at 100, not flexible
 			D1_HPg.draw();
 
+			//Health_Bar(D1, D2_HPb, D2_HPg);
 
-			Health_Bar(E_Array[0], D2_HPb, D2_HPg);
+			for (int i = 0; i < nb_enemy; i++)
+			{
+				Health_Bar(E_Array[i], D2_HPb[i], D2_HPg[i]);
+			}
+			
 			
 
 			for (int i = 0; i < 5; i++)
 			{
-				Rigid[i] = Box((Layer4.get_layerX() - 500) + i * 200, Layer4.get_layerY(), 20, 200, 0.0, 0.0, 0.0);  //-500 in x position relative to Layer4
+				Rigid[i].reset((Layer4.get_layerX() - 500) + i * 200, Layer4.get_layerY(), 20, 200, 0.0, 0.0, 0.0);  //-500 in x position relative to Layer4
 				Rigid[i].draw();
 				collision(D1, D1_Area, Rigid[i]);
-				collision(E_Array[0], E_Area[0], Rigid[i]);
 			}
 
 			/*
@@ -742,6 +828,10 @@ int main()
 				getting_shot(D1, D1_Area, bullet[i]);
 			}
 			
+			if (E_Array[0].get_radius() < 500)
+			{
+				shoot_delay++;
+			}
 
 			/*
 
@@ -779,7 +869,6 @@ int main()
 			*/
 			
 
-
 			D1.set_delta_time();
 			D1.inputs();
 			D1.calculate();
@@ -793,11 +882,15 @@ int main()
 
 			
 			//Enemy Class
-			E_Array[0].set_delta_time();
-			E_Array[0].inputs(D1.get_x(), D1.get_y());
-			E_Array[0].calculate();
-			E_Array[0].stability();
-			E_Array[0].draw();
+			for (int i = 0; i < nb_enemy; i++)
+			{
+				E_Array[i].set_delta_time();
+				E_Array[i].inputs(D1.get_x(), D1.get_y());
+				E_Array[i].calculate();
+				E_Array[i].stability();
+				E_Array[i].draw();
+			}
+
 
 
 			if (D1.get_hp() == 0) {											//Status check, restart drone simulation if HP = 0
@@ -813,15 +906,14 @@ int main()
 
 			if (KEY('R')) break;			//Restart if lost
 			
-
 			update();
 		}
-
-		while (trigger != 1) 
+		
+		for(;;) 
 		{
 			clear();
 			double text_x = 255, text_y = 425, text_scale = 1.0;
-			Box restart(450, 400, 400, 200, 0.0, 0.0, 0.0);				//Backdrop for text
+			restart.reset(450, 400, 400, 200, 0.0, 0.0, 0.0);				//Backdrop for text
 			restart.draw();
 
 			text("Press R to restart", text_x, text_y, text_scale);		//Text to restart simulation
@@ -829,11 +921,13 @@ int main()
 			if (KEY('R')) 
 			{
 				trigger = 1;
+				break;
 			}
 
 			update();
 		}
 		trigger = 0;
+
 	}
 
 	cout << "\ndone.\n";
@@ -878,9 +972,9 @@ void restore_hp(Drone& name1, Box name2) {
 
 void Health_Bar(Enemy enemy, Box black, Box green)
 {
-	black = Box(enemy.get_x(), (enemy.get_y() + 40), 106, 16, 0.0, 0.0, 0.0);	//Black outline of the HP bar
+	black.reset(enemy.get_x(), (enemy.get_y() + 40), 106, 16, 0.0, 0.0, 0.0);	//Black outline of the HP bar
 	black.draw();
 
-	green = Box(enemy.get_x() - ((100 - enemy.get_hp()) / 2), enemy.get_y() + 40, enemy.get_hp(), 10, 0.0, 1.0, 0.0);	//This assumes HP is set at 100, not flexible
+	green.reset(enemy.get_x() - ((100 - enemy.get_hp()) / 2), enemy.get_y() + 40, enemy.get_hp(), 10, 0.0, 1.0, 0.0);	//This assumes HP is set at 100, not flexible
 	green.draw();
 }
