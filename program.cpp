@@ -313,7 +313,8 @@ public:
 	void inputs(double player_x, double player_y);
 	void stability();
 	void calculate();
-	void map_rel(double layer_x, double layer_y, Drone name1);
+	void map_rel(Drone name1);
+	double get_aim(Drone player);
 
 };
 
@@ -381,7 +382,21 @@ void Enemy::calculate()
 	x = x + x_dot;
 }
 
-void Enemy::map_rel(double layer_x, double layer_y, Drone name1)
+double Enemy::get_aim(Drone player)
+{
+	if ((player.get_x() - x) > 0)
+	{
+		aim_angle = atan((player.get_y() - y) / (player.get_x() - x));
+	}
+	else if ((player.get_x() - x) < 0)
+	{
+		aim_angle = 3.14 + atan((player.get_y() - y) / (player.get_x() - x));
+	}
+
+	return aim_angle;
+}
+
+void Enemy::map_rel(Drone name1)
 {
 
 	if (name1.get_x() >= 1050) {		//1050 and 350 to start smooth scrolling before drone hits boundary
@@ -393,7 +408,11 @@ void Enemy::map_rel(double layer_x, double layer_y, Drone name1)
 		name1.get_y() = 500;
 		y -= name1.get_y_dot() * 0.65;				//***add depth factor***
 	}
-	else if (name1.get_y() <= 250) y -= name1.get_y_dot() * 0.65;
+	else if (name1.get_y() <= 250)
+	{
+		name1.get_y() = 250;
+		y -= name1.get_y_dot() * 0.65;
+	}
 
 }
 
@@ -490,6 +509,7 @@ public:
 	void trajectory();
 	double get_x() { return x; }
 	double get_y() { return y; }
+	void map_rel(Drone name1);
 };
 
 Bullet::Bullet()
@@ -538,6 +558,24 @@ void Bullet::trajectory()
 
 }
 
+void Bullet::map_rel(Drone name1)
+{
+	if (name1.get_x() >= 1050) {		//1050 and 350 to start smooth scrolling before drone hits boundary
+		x -= name1.get_x_dot() * 0.65;					//***add depth factor***
+	}
+	else if (name1.get_x() <= 350) x -= name1.get_x_dot() * 0.65;
+
+	if (name1.get_y() >= 500) {		//1050 and 350 to start smooth scrolling before drone hits boundary
+		name1.get_y() = 500;
+		y -= name1.get_y_dot() * 0.65;				//***add depth factor***
+	}
+	else if (name1.get_y() <= 250)
+	{
+		name1.get_y() = 250;
+		y -= name1.get_y_dot() * 0.65;
+	}
+}
+
 //map class using Parallax technique.
 class map { //This class creates the layer objects that the environment is composed of
 
@@ -575,8 +613,11 @@ void map::draw_layer(Drone& name1) {
 		name1.get_y() = 500;
 		layer_y -= name1.get_y_dot()*df;				//***add depth factor***
 	}
-	else if (name1.get_y() <= 250) layer_y -= name1.get_y_dot() * df;
-
+	else if (name1.get_y() <= 250)
+	{
+		name1.get_y() = 250;
+		layer_y -= name1.get_y_dot() * df;
+	}
 	draw_sprite(id_layer, layer_x, layer_y, 0, layer_scale);
 }
 
@@ -593,7 +634,7 @@ double map::get_layerY() {
 void restore_hp(Drone& name1, Box name2);
 void collision(Drone &A, Box Drone, Box Rigid);
 void Health_Bar(Enemy enemy, Box black, Box green);
-void getting_shot(Drone &Enemy_Drone, Box Enemy_Area, Bullet bullet);
+void getting_shot(Drone &Enemy_Drone, Box Enemy_Area, Bullet &bullet);
 
 int main()
 {
@@ -640,7 +681,7 @@ int main()
 			Box HP_zone1(Layer4.get_layerX(), Layer4.get_layerY(), 200, 200, 0.0, 0.5, 0.0);					//Box object that will be a healing area
 			HP_zone1.draw();
 
-			E_Array[0].map_rel(Layer4.get_layerX(), Layer4.get_layerY(), D1);
+			E_Array[0].map_rel(D1);
 
 			Box D1_HPb(D1.get_x(), (D1.get_y() + 40), 106, 16, 0.0, 0.0, 0.0);	//Black outline of the HP bar
 			D1_HPb.draw();
@@ -660,7 +701,8 @@ int main()
 				collision(E_Array[0], E_Area[0], Rigid[i]);
 			}
 
-			for (int i = 0; i < 10; i++)
+			/*
+			for (int i = 0; i < 9; i++)
 			{
 
 				if (bullet[i].get_state() == 1)
@@ -676,10 +718,50 @@ int main()
 					shoot_delay = 0;
 				}
 			}
+			*/
 
 			for (int i = 0; i < 10; i++)
 			{
-				getting_shot(E_Array[0], E_Area[0], bullet[i]);
+
+				if (bullet[i].get_state() == 1)
+				{
+					bullet[i].trajectory();
+					continue;
+				}
+
+				if (shoot_delay > 10 && bullet[i].get_state() == 0)
+				{
+					bullet[i].set_initial(E_Array[0].get_x(), E_Array[0].get_y(), E_Array[0].get_aim(D1));
+					bullet[i].get_state() = 1;
+					shoot_delay = 0;
+				}
+			}
+
+			for (int i = 0; i < 10; i++)
+			{
+				getting_shot(D1, D1_Area, bullet[i]);
+			}
+			
+
+			/*
+
+			if (bullet[9].get_state() == 1)
+			{
+				bullet[9].trajectory();
+			}
+
+			if (shoot_delay > 10 && bullet[9].get_state() == 0)
+			{
+				bullet[9].set_initial(E_Array[0].get_x(), E_Array[0].get_y(), E_Array[0].get_aim(D1));
+				bullet[9].get_state() = 1;
+			}
+			*/
+
+
+			for (int i = 0; i < 10; i++)
+			{
+				//getting_shot(E_Array[0], E_Area[0], bullet[i]);
+				bullet[i].map_rel(D1);
 			}
 
 			
@@ -754,9 +836,6 @@ int main()
 		trigger = 0;
 	}
 
-
-
-
 	cout << "\ndone.\n";
 	getchar();
 
@@ -774,10 +853,12 @@ void collision(Drone &A, Box Drone, Box Rigid)
 	}
 }
 
-void getting_shot(Drone &Enemy_Drone,Box Enemy_Area,Bullet bullet)
+void getting_shot(Drone &Enemy_Drone,Box Enemy_Area,Bullet &bullet)
 {
 	if (bullet.get_x() < Enemy_Area.get_right() && bullet.get_x() > Enemy_Area.get_left() && bullet.get_y() < Enemy_Area.get_top() && bullet.get_y() > Enemy_Area.get_bottom())
 	{
+		bullet.get_state() = 0;
+		bullet.set_initial(0, 0, 0);
 		Enemy_Drone.bounce();
 	}
 }
