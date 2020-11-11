@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <fstream>
 #include <cstdio>
 #include <cmath>
 
@@ -680,7 +681,94 @@ double map::get_layerX() {
 double map::get_layerY() {
 	return layer_y;
 }
+//Declare array of coin objects
+//map their locations on the map
+//their x and y position update with the map
+//draw (if state = 1) them to the screen above the layers but below the drone
+//After: they can be grabbed and state = 0 to disappear... so only draw if state = 1
+//with time, they will return to state 1. 
 
+class Coin {
+	double coin_x;
+	double coin_y;
+	int id_coin1;				//ID for coin sprite
+	int id_coin2;
+	int id_coin3;
+	int id_coin4;
+	double coin_rotating;			//no turn, 1, half way is 2, full turn is 3
+	bool coin_state;					//when state == 0, coin disappears, coin returns to state == 1 after time passes
+	static int collected_coins;			//static variable shared among all objects, they will all increment this value when they are grabbed! (grab_coin function being called)
+
+public:
+	Coin();										//constructor for each coin object, all should spawn ie: state == 1
+	double& get_x() { return coin_x; };			//access function necessary when mapping coins from a text file
+	double& get_y() { return coin_y; };			//access function necessary when mapping coins from a text file
+	bool& get_state() { return coin_state; };
+	int& get_collected_coins() { return collected_coins; };
+	void draw_coin(Drone& name1);			//this is called to draw each coin object, using layer 4 relative displacement	
+};
+
+int Coin::collected_coins = 0;				//Can't initialize static member variables in the constructor
+
+Coin::Coin() {
+	coin_x = 0.0;
+	coin_y = 0.0;
+	create_sprite("pirate_coin1.png", id_coin1);
+	create_sprite("pirate_coin2.png", id_coin2);
+	create_sprite("pirate_coin3.png", id_coin3);
+	create_sprite("pirate_coin4.png", id_coin4);
+	coin_rotating = 2.0;
+	coin_state = 1;
+}
+
+void Coin::draw_coin(Drone& name1) {
+
+	//coin position changes with map/drone movement:
+	if (name1.get_x() >= 1050) {		//1050 and 350 to start smooth scrolling before drone hits boundary
+		coin_x -= name1.get_x_dot() * 0.65;					//***add depth factor***
+	}
+	else if (name1.get_x() <= 350) coin_x -= name1.get_x_dot() * 0.65;
+
+	if (name1.get_y() >= 500) {		//1050 and 350 to start smooth scrolling before drone hits boundary
+		name1.get_y() = 500;
+		coin_y -= name1.get_y_dot() * 0.65;				//***add depth factor***
+	}
+	else if (name1.get_y() <= 250)
+	{
+		name1.get_y() = 250;
+		coin_y -= name1.get_y_dot() * 0.65;
+	}
+
+	//drawing a rotating coin
+	if (coin_rotating >= 2.0 && coin_rotating < 3.0 && coin_state == 1) {
+		draw_sprite(id_coin1, coin_x, coin_y, 0, 1);
+		coin_rotating += 0.05;
+	}
+	else if (coin_rotating >= 3.0 && coin_rotating < 4.0 && coin_state == 1) {
+		draw_sprite(id_coin2, coin_x, coin_y, 0, 1);
+		coin_rotating += 0.05;
+	}
+	else if (coin_rotating >= 4.0 && coin_rotating < 5.0 && coin_state == 1) {
+		draw_sprite(id_coin3, coin_x, coin_y, 0, 1);
+		coin_rotating += 0.05;
+	}
+	else if (coin_rotating >= 5.0 && coin_rotating < 6.0 && coin_state == 1) {
+		draw_sprite(id_coin4, coin_x, coin_y, 0, 1);
+		coin_rotating += 0.05;
+	}
+	else if (coin_rotating >= 6.0) {
+		coin_rotating = 2.0;
+	}
+}
+
+void map_coins(char coin_locations[], Coin coin_array[], int nb_coins);
+void grab_coin(Box& Drone_Area, Coin coin_array[], int nb_coins);
+void reset_state(Coin coin_array[], int nb_coins);
+
+//when coins get picked up, they disappear momentarily. a seperate function called "collecting coins", state goes to 0 when its touched?
+
+
+//coin_grabbed function to change state of coin
 
 
 void restore_hp(Drone& name1, Box name2);
@@ -688,25 +776,27 @@ void collision(Drone &A, Box Drone, Box Rigid);
 void Health_Bar(Enemy enemy, Box black, Box green);
 void getting_shot(Drone &Enemy_Drone, Box Enemy_Area, Bullet &bullet);
 const int nb_enemy = 1;
+const int nb_coins = 5;
 
 int main()
 {
 	initialize_graphics();
 	Drone D1(0, 0, 0);
 	Box D1_Area(0, 0, 120, 40, 1.0, 1.0, 1.0);
-	Box E_Area[nb_enemy];
+	//Box E_Area[nb_enemy];
 
 	Box Rigid[5];
 	Box HP_zone1(0, 0, 200, 200, 0.0, 0.5, 0.0);
 	Bullet bullet[10];
+	Coin coins[nb_coins];						//coin class is added
 
 	Box D1_HPb(D1.get_x(), (D1.get_y() + 40), 106, 16, 0.0, 0.0, 0.0);	//Black outline of the HP bar
 	Box D1_HPg(D1.get_x() - ((100 - D1.get_hp()) / 2), D1.get_y() + 40, D1.get_hp(), 10, 0.0, 1.0, 0.0);
 
-	Box D2_HPg[nb_enemy];
-	Box D2_HPb[nb_enemy];
+	//Box D2_HPg[nb_enemy];
+	//Box D2_HPb[nb_enemy];
 
-	Enemy E_Array[nb_enemy];
+	//Enemy E_Array[nb_enemy];
 
 	Box restart(0, 0, 400, 200, 0.0, 0.0, 0.0);
 
@@ -718,15 +808,19 @@ int main()
 
 		D1.reset(400, 300, 0);
 		
-		for (int i = 0; i < nb_enemy; i++)
-		{
-			E_Array[i].reset(801 + 50*i, 300 + 60*i, 0);
-		}
+		//for (int i = 0; i < nb_enemy; i++)
+		//{
+			//E_Array[i].reset(1000 + 50*i, 300 + 60*i, 0);
+		//}
 		
 		//(1) - Initializing of Layers
 		map Layer1("Layer1.png", 0.5, 700.0, 500, 1.8);		//Creating Layer1 object of the map class, attaching the appropriate image and depth factor (df)
 		map Layer4("Layer4.png", 0.6, 700.0, 100, 1.65);	//arguments: (image file, its speed relative to other layers (df), x and y position in window relative to other layers, image scaling)
-
+		
+		//Initialization of coins on layers
+		map_coins("coin_locations.txt", coins, nb_coins);
+		//Reset state of coins to 1
+		reset_state(coins, nb_coins);
 
 		int id_laser;
 		create_sprite("Laser.png", id_laser);
@@ -746,23 +840,28 @@ int main()
 			//(1) - Drawing of Layers
 			Layer1.draw_layer(D1);				//Updating background according to D1 positioning, absolute background so goes first
 			Layer4.draw_layer(D1);
-
+			
+			//Drawing of coins
+			for (int i = 0; i < nb_coins; i++) {
+				coins[i].draw_coin(D1);
+			}
+			
 
 			D1_Area.reset(D1.get_x(), D1.get_y(), 120, 40, 1.0, 1.0, 1.0);
 			
-			for (int i = 0; i < nb_enemy; i++)
-			{
-				E_Area[i].reset(E_Array[i].get_x(), E_Array[i].get_y(), 120, 40, 1.0, 1.0, 1.0);
-			}
+			//for (int i = 0; i < nb_enemy; i++)
+			//{
+				//E_Area[i].reset(E_Array[i].get_x(), E_Array[i].get_y(), 120, 40, 1.0, 1.0, 1.0);
+			//}
 			
 
 			HP_zone1.reset(Layer4.get_layerX(), Layer4.get_layerY(), 200, 200, 0.0, 0.5, 0.0);					//Box object that will be a healing area
 			HP_zone1.draw();
 
-			for (int i = 0; i < nb_enemy; i++)
-			{
-				E_Array[i].map_rel(D1);
-			}
+			//for (int i = 0; i < nb_enemy; i++)
+			//{
+				//E_Array[i].map_rel(D1);
+			//}
 			
 
 			D1_HPb.reset(D1.get_x(), (D1.get_y() + 40), 106, 16, 0.0, 0.0, 0.0);	//Black outline of the HP bar
@@ -773,10 +872,10 @@ int main()
 
 			//Health_Bar(D1, D2_HPb, D2_HPg);
 
-			for (int i = 0; i < nb_enemy; i++)
-			{
-				Health_Bar(E_Array[i], D2_HPb[i], D2_HPg[i]);
-			}
+			//for (int i = 0; i < nb_enemy; i++)
+			//{
+				//Health_Bar(E_Array[i], D2_HPb[i], D2_HPg[i]);
+			//}
 			
 			
 
@@ -787,7 +886,7 @@ int main()
 				collision(D1, D1_Area, Rigid[i]);
 			}
 
-			/*
+			
 			for (int i = 0; i < 9; i++)
 			{
 
@@ -804,9 +903,9 @@ int main()
 					shoot_delay = 0;
 				}
 			}
-			*/
+			
 
-			for (int i = 0; i < 10; i++)
+			/*for (int i = 0; i < 10; i++)
 			{
 
 				if (bullet[i].get_state() == 1)
@@ -822,16 +921,17 @@ int main()
 					shoot_delay = 0;
 				}
 			}
+			*/
 
 			for (int i = 0; i < 10; i++)
 			{
 				getting_shot(D1, D1_Area, bullet[i]);
 			}
 			
-			if (E_Array[0].get_radius() < 500)
-			{
-				shoot_delay++;
-			}
+			//if (E_Array[0].get_radius() < 500)
+			//{
+			//	shoot_delay++;
+			//}
 
 			/*
 
@@ -878,18 +978,20 @@ int main()
 			D1.draw();
 			draw_sprite(id_laser, D1.get_x(), D1.get_y(), D1.get_aim() + D1.get_theta(), 1.0);
 
+			grab_coin(D1_Area, coins, nb_coins);
+
 			//D1.controller();
 
 			
 			//Enemy Class
-			for (int i = 0; i < nb_enemy; i++)
-			{
-				E_Array[i].set_delta_time();
-				E_Array[i].inputs(D1.get_x(), D1.get_y());
-				E_Array[i].calculate();
-				E_Array[i].stability();
-				E_Array[i].draw();
-			}
+			//for (int i = 0; i < nb_enemy; i++)
+			//{
+				//E_Array[i].set_delta_time();
+				//E_Array[i].inputs(D1.get_x(), D1.get_y());
+				//E_Array[i].calculate();
+				//E_Array[i].stability();
+				//E_Array[i].draw();
+			//}
 
 
 
@@ -977,4 +1079,50 @@ void Health_Bar(Enemy enemy, Box black, Box green)
 
 	green.reset(enemy.get_x() - ((100 - enemy.get_hp()) / 2), enemy.get_y() + 40, enemy.get_hp(), 10, 0.0, 1.0, 0.0);	//This assumes HP is set at 100, not flexible
 	green.draw();
+}
+
+void map_coins(char coin_locations[], Coin coin_array[], int nb_coins) {      //regular function will map all the coins in one shot, this is regular function 
+	int i = 0;													//because we're mapping all the objects in one shot...can't do that in a member 
+	double x_value, y_value;									//function of a single object
+
+	ifstream fin;
+	fin.open(coin_locations);
+	if (!fin) {
+		cout << "\nError opening coin locations file in map_coins function";
+		exit(1);
+	}
+
+	for (i = 0; i < nb_coins; i++) {					//grabbing coordinates from file and initializing coin locations
+		fin >> x_value;
+		coin_array[i].get_x() = x_value;
+		fin >> y_value;
+		coin_array[i].get_y() = y_value;
+	}
+
+	fin.close();
+
+}
+
+void grab_coin(Box& Drone_Area, Coin coin_array[], int nb_coins) {		//when a coin object gets grabbed, change state from 1 to 0, make collected coins counter go up(and make it respawn?)
+
+
+	for (int i = 0; i < nb_coins; i++) {
+		if (coin_array[i].get_state() == 1 && coin_array[i].get_x() < Drone_Area.get_right() && coin_array[i].get_x() > Drone_Area.get_left() && coin_array[i].get_y() < Drone_Area.get_top() && coin_array[i].get_y() > Drone_Area.get_bottom())
+		{
+			//coin_array[i].get_state() == 1 means the coin has previously not been grabbed already
+			coin_array[i].get_state() = 0;
+			coin_array[i].get_collected_coins() += 1;
+			cout << "\nYou have collected: " << coin_array[i].get_collected_coins() << " so far!";
+		}
+	}
+}
+
+void reset_state(Coin coin_array[], int nb_coins) {
+	for (int i = 0; i < nb_coins; i++) {
+		if (coin_array[i].get_state() == 0) {				//only if it's 0, revert it back to 1 and decrease collected_coins by 1
+			coin_array[i].get_state() = 1;
+			coin_array[i].get_collected_coins() -= 1;
+		}
+	}
+
 }
