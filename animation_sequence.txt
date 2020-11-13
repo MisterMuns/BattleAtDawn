@@ -1,0 +1,5 @@
+4
+pirate_coin1.png
+pirate_coin2.png
+pirate_coin3.png
+pirate_coin4.png

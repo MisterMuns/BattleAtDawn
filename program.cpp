@@ -311,8 +311,8 @@ void Drone::bounce()
 
 	}
 
-	if (hp >= 20) {
-		hp -= 20;			   //Drone health (100 pixels) - take 20 damage when bounch occurs
+	if (hp >= 5) {
+		hp -= 5;			   //Drone health (100 pixels) - take 20 damage when bounch occurs
 	}
 	else {
 		hp = 0;
@@ -761,6 +761,84 @@ void Coin::draw_coin(Drone& name1) {
 	}
 }
 
+class Animation
+{
+private:
+	int sequence[20];
+	int size;
+	int index;
+	int rate;
+	int delay;
+	int x;
+	int y;
+	bool trigger_state;
+public:
+	Animation();
+	void trigger(double _x, double _y);
+	void animate();
+	bool& return_trig() { return trigger_state; }
+};
+
+Animation::Animation()
+{
+	index = 0;
+	delay = 0;
+	rate = 1;
+	x = 0;
+	y = 0;
+	trigger_state = 0;
+
+	ifstream fin;
+	fin.open("Animation/animation_sequence2.txt");
+
+	if (!fin) {
+		cout << "\nError opening explosions locations file in animatation function";
+		exit(1);
+	}
+
+	fin >> size;
+
+	char temp[100];
+	
+	for (int i = 0; i < size; i++)
+	{
+		fin >> temp;
+		create_sprite(temp, sequence[i]);
+	}
+	fin.close();
+
+}
+
+void Animation::trigger(double _x, double _y)
+{
+	trigger_state = 1;
+	x = _x;
+	y = _y;
+}
+
+void Animation::animate()
+{
+
+	if (trigger_state == 1)
+	{
+		draw_sprite(sequence[index], x, y, 0, 1);
+
+		delay++;
+
+		if (delay > rate)
+		{
+			index++;
+			delay = 0;
+		}
+
+		if (index == size)
+		{
+			index = 0;
+			trigger_state = 0;
+		}
+	}
+}
+
 void map_coins(char coin_locations[], Coin coin_array[], int nb_coins);
 void grab_coin(Box& Drone_Area, Coin coin_array[], int nb_coins);
 void reset_state(Coin coin_array[], int nb_coins);
@@ -774,7 +852,7 @@ void reset_state(Coin coin_array[], int nb_coins);
 void restore_hp(Drone& name1, Box name2);
 void collision(Drone &A, Box Drone, Box Rigid);
 void Health_Bar(Enemy enemy, Box black, Box green);
-void getting_shot(Drone &Enemy_Drone, Box Enemy_Area, Bullet &bullet);
+void getting_shot(Drone &Enemy_Drone, Box Enemy_Area, Bullet &bullet, Animation &explosion);
 const int nb_enemy = 1;
 const int nb_coins = 5;
 
@@ -783,7 +861,6 @@ int main()
 	initialize_graphics();
 	Drone D1(0, 0, 0);
 	Box D1_Area(0, 0, 120, 40, 1.0, 1.0, 1.0);
-	//Box E_Area[nb_enemy];
 
 	Box Rigid[5];
 	Box HP_zone1(0, 0, 200, 200, 0.0, 0.5, 0.0);
@@ -793,13 +870,15 @@ int main()
 	Box D1_HPb(D1.get_x(), (D1.get_y() + 40), 106, 16, 0.0, 0.0, 0.0);	//Black outline of the HP bar
 	Box D1_HPg(D1.get_x() - ((100 - D1.get_hp()) / 2), D1.get_y() + 40, D1.get_hp(), 10, 0.0, 1.0, 0.0);
 
-	//Box D2_HPg[nb_enemy];
-	//Box D2_HPb[nb_enemy];
+	Box D2_HPg[nb_enemy];
+	Box D2_HPb[nb_enemy];
 
-	//Enemy E_Array[nb_enemy];
+	Enemy E_Array[nb_enemy];
+	Box E_Area[nb_enemy];
 
 	Box restart(0, 0, 400, 200, 0.0, 0.0, 0.0);
 
+	Animation explosion;
 
 	for (;;)
 	{
@@ -807,11 +886,12 @@ int main()
 		int shoot_delay;
 
 		D1.reset(400, 300, 0);
+
 		
-		//for (int i = 0; i < nb_enemy; i++)
-		//{
-			//E_Array[i].reset(1000 + 50*i, 300 + 60*i, 0);
-		//}
+		for (int i = 0; i < nb_enemy; i++)
+		{
+			E_Array[i].reset(1000 + 50*i, 300 + 60*i, 0);
+		}
 		
 		//(1) - Initializing of Layers
 		map Layer1("Layer1.png", 0.5, 700.0, 500, 1.8);		//Creating Layer1 object of the map class, attaching the appropriate image and depth factor (df)
@@ -831,6 +911,7 @@ int main()
 			shoot_delay = 0;
 		}
 
+
 		for (;;)
 		{
 			clear();
@@ -845,23 +926,22 @@ int main()
 			for (int i = 0; i < nb_coins; i++) {
 				coins[i].draw_coin(D1);
 			}
-			
 
 			D1_Area.reset(D1.get_x(), D1.get_y(), 120, 40, 1.0, 1.0, 1.0);
 			
-			//for (int i = 0; i < nb_enemy; i++)
-			//{
-				//E_Area[i].reset(E_Array[i].get_x(), E_Array[i].get_y(), 120, 40, 1.0, 1.0, 1.0);
-			//}
+			for (int i = 0; i < nb_enemy; i++)
+			{
+				E_Area[i].reset(E_Array[i].get_x(), E_Array[i].get_y(), 120, 40, 1.0, 1.0, 1.0);
+			}
 			
 
 			HP_zone1.reset(Layer4.get_layerX(), Layer4.get_layerY(), 200, 200, 0.0, 0.5, 0.0);					//Box object that will be a healing area
 			HP_zone1.draw();
 
-			//for (int i = 0; i < nb_enemy; i++)
-			//{
-				//E_Array[i].map_rel(D1);
-			//}
+			for (int i = 0; i < nb_enemy; i++)
+			{
+				E_Array[i].map_rel(D1);
+			}
 			
 
 			D1_HPb.reset(D1.get_x(), (D1.get_y() + 40), 106, 16, 0.0, 0.0, 0.0);	//Black outline of the HP bar
@@ -872,10 +952,10 @@ int main()
 
 			//Health_Bar(D1, D2_HPb, D2_HPg);
 
-			//for (int i = 0; i < nb_enemy; i++)
-			//{
-				//Health_Bar(E_Array[i], D2_HPb[i], D2_HPg[i]);
-			//}
+			for (int i = 0; i < nb_enemy; i++)
+			{
+				Health_Bar(E_Array[i], D2_HPb[i], D2_HPg[i]);
+			}
 			
 			
 
@@ -886,26 +966,7 @@ int main()
 				collision(D1, D1_Area, Rigid[i]);
 			}
 
-			
-			for (int i = 0; i < 9; i++)
-			{
-
-				if (bullet[i].get_state() == 1)
-				{
-					bullet[i].trajectory();
-					continue;
-				}
-
-				if (shoot_delay > 10 && bullet[i].get_state() == 0)
-				{
-					bullet[i].set_initial(D1.get_x(), D1.get_y(), D1.get_aim());
-					bullet[i].get_state() = 1;
-					shoot_delay = 0;
-				}
-			}
-			
-
-			/*for (int i = 0; i < 10; i++)
+			for (int i = 0; i < 10; i++)
 			{
 
 				if (bullet[i].get_state() == 1)
@@ -921,29 +982,19 @@ int main()
 					shoot_delay = 0;
 				}
 			}
-			*/
+			
 
 			for (int i = 0; i < 10; i++)
 			{
-				getting_shot(D1, D1_Area, bullet[i]);
+				getting_shot(D1, D1_Area, bullet[i], explosion);
 			}
+
+			explosion.animate();
 			
-			//if (E_Array[0].get_radius() < 500)
-			//{
-			//	shoot_delay++;
-			//}
-
 			/*
-
-			if (bullet[9].get_state() == 1)
+			if (E_Array[0].get_radius() < 500)
 			{
-				bullet[9].trajectory();
-			}
-
-			if (shoot_delay > 10 && bullet[9].get_state() == 0)
-			{
-				bullet[9].set_initial(E_Array[0].get_x(), E_Array[0].get_y(), E_Array[0].get_aim(D1));
-				bullet[9].get_state() = 1;
+				shoot_delay++;
 			}
 			*/
 
@@ -984,14 +1035,14 @@ int main()
 
 			
 			//Enemy Class
-			//for (int i = 0; i < nb_enemy; i++)
-			//{
-				//E_Array[i].set_delta_time();
-				//E_Array[i].inputs(D1.get_x(), D1.get_y());
-				//E_Array[i].calculate();
-				//E_Array[i].stability();
-				//E_Array[i].draw();
-			//}
+			for (int i = 0; i < nb_enemy; i++)
+			{
+				E_Array[i].set_delta_time();
+				E_Array[i].inputs(D1.get_x(), D1.get_y());
+				E_Array[i].calculate();
+				E_Array[i].stability();
+				E_Array[i].draw();
+			}
 
 
 
@@ -1049,10 +1100,13 @@ void collision(Drone &A, Box Drone, Box Rigid)
 	}
 }
 
-void getting_shot(Drone &Enemy_Drone,Box Enemy_Area,Bullet &bullet)
+void getting_shot(Drone &Enemy_Drone,Box Enemy_Area,Bullet &bullet, Animation &explosion)
 {
 	if (bullet.get_x() < Enemy_Area.get_right() && bullet.get_x() > Enemy_Area.get_left() && bullet.get_y() < Enemy_Area.get_top() && bullet.get_y() > Enemy_Area.get_bottom())
 	{
+		explosion.trigger(bullet.get_x(), bullet.get_y());
+		//explosion.return_trig() = 1;
+
 		bullet.get_state() = 0;
 		bullet.set_initial(0, 0, 0);
 		Enemy_Drone.bounce();
