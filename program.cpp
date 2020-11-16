@@ -10,9 +10,15 @@
 
 #include "game_pad.h"
 
+
 #include "timer.h" // use the time / clock reading function
 
+#include <MMSystem.h>
+
 using namespace std;
+
+#pragma comment(lib,"winmm.lib") // links a windows library
+
 
 const double gravity = 9.81;
 
@@ -767,29 +773,29 @@ private:
 	int sequence[20];
 	int size;
 	int index;
-	int rate;
+	double duration;
 	int delay;
 	int x;
 	int y;
 	bool trigger_state;
 public:
-	Animation();
+	Animation(char file_seq[], double _duration);
 	void trigger(double _x, double _y);
 	void animate();
 	bool& return_trig() { return trigger_state; }
 };
 
-Animation::Animation()
+Animation::Animation(char file_seq[], double _duration)
 {
 	index = 0;
 	delay = 0;
-	rate = 1;
+	duration = _duration;
 	x = 0;
 	y = 0;
 	trigger_state = 0;
 
 	ifstream fin;
-	fin.open("Animation/animation_sequence2.txt");
+	fin.open(file_seq);
 
 	if (!fin) {
 		cout << "\nError opening explosions locations file in animatation function";
@@ -825,7 +831,7 @@ void Animation::animate()
 
 		delay++;
 
-		if (delay > rate)
+		if (delay > duration)
 		{
 			index++;
 			delay = 0;
@@ -839,6 +845,53 @@ void Animation::animate()
 	}
 }
 
+class Sound
+{
+private:
+	int n;
+	char* p_buffer, * p_buffer_end;
+	short int* p_data;
+
+public:
+	Sound(char file_name[]);
+	void play();
+};
+
+Sound::Sound(char file_name[])
+{
+	ifstream fin;
+
+	fin.open(file_name, ios::binary); // open binary file
+
+	if (!fin) {
+		cout << "\nfile open error";
+		exit(1);
+	}
+
+	fin.seekg(0, ios::end); // move to the end of the file
+
+	n = fin.tellg(); // get the current position -> size of file
+
+	fin.seekg(0, ios::beg); // move to the beginning of the file (rewind)
+
+	// need to dynamically allocate an array of size n for p_buffer
+	p_buffer = new char[n];
+
+	if (p_buffer == NULL) {
+		cout << "\ndynamic memory allocation error";
+		exit(1);
+	}
+
+	fin.read(p_buffer, n);
+
+	fin.close();
+}
+
+void Sound::play()
+{
+	PlaySoundA(p_buffer, NULL, SND_MEMORY | SND_ASYNC);
+}
+
 void map_coins(char coin_locations[], Coin coin_array[], int nb_coins);
 void grab_coin(Box& Drone_Area, Coin coin_array[], int nb_coins);
 void reset_state(Coin coin_array[], int nb_coins);
@@ -850,9 +903,9 @@ void reset_state(Coin coin_array[], int nb_coins);
 
 
 void restore_hp(Drone& name1, Box name2);
-void collision(Drone &A, Box Drone, Box Rigid);
+void collision(Drone &A, Box Drone, Box Rigid, Animation &_animation, Sound _sound);
 void Health_Bar(Enemy enemy, Box black, Box green);
-void getting_shot(Drone &Enemy_Drone, Box Enemy_Area, Bullet &bullet, Animation &explosion);
+void getting_shot(Drone &Enemy_Drone, Box Enemy_Area, Bullet &bullet, Animation &explosion, Sound sound);
 const int nb_enemy = 1;
 const int nb_coins = 5;
 
@@ -878,7 +931,12 @@ int main()
 
 	Box restart(0, 0, 400, 200, 0.0, 0.0, 0.0);
 
-	Animation explosion;
+	Animation explosion("Animation/Explosion/animation_sequence.txt", 1);
+	Animation collision_animation("Animation/Collision/animation_sequence.txt", 1);
+
+	Sound boom("boom.wav");
+	Sound laser("laser.wav");
+	Sound collision_sound("collision.wav");
 
 	for (;;)
 	{
@@ -963,7 +1021,7 @@ int main()
 			{
 				Rigid[i].reset((Layer4.get_layerX() - 500) + i * 200, Layer4.get_layerY(), 20, 200, 0.0, 0.0, 0.0);  //-500 in x position relative to Layer4
 				Rigid[i].draw();
-				collision(D1, D1_Area, Rigid[i]);
+				collision(D1, D1_Area, Rigid[i], collision_animation, collision_sound);
 			}
 
 			for (int i = 0; i < 10; i++)
@@ -980,16 +1038,18 @@ int main()
 					bullet[i].set_initial(E_Array[0].get_x(), E_Array[0].get_y(), E_Array[0].get_aim(D1));
 					bullet[i].get_state() = 1;
 					shoot_delay = 0;
+					laser.play();
 				}
 			}
 			
 
 			for (int i = 0; i < 10; i++)
 			{
-				getting_shot(D1, D1_Area, bullet[i], explosion);
+				getting_shot(D1, D1_Area, bullet[i], explosion, boom);
 			}
 
 			explosion.animate();
+			collision_animation.animate();
 			
 			/*
 			if (E_Array[0].get_radius() < 500)
@@ -1091,16 +1151,18 @@ int main()
 
 
 
-void collision(Drone &A, Box Drone, Box Rigid)
+void collision(Drone &A, Box Drone, Box Rigid, Animation &_animation, Sound _sound)
 {
 
 	if (Drone.get_left() < Rigid.get_right() && Drone.get_right() > Rigid.get_left() && Drone.get_bottom() < Rigid.get_top() && Drone.get_top() > Rigid.get_bottom())
 	{
+		_animation.trigger(A.get_x(), A.get_y());
+		_sound.play();
 		A.bounce();
 	}
 }
 
-void getting_shot(Drone &Enemy_Drone,Box Enemy_Area,Bullet &bullet, Animation &explosion)
+void getting_shot(Drone &Enemy_Drone,Box Enemy_Area,Bullet &bullet, Animation &explosion, Sound sound)
 {
 	if (bullet.get_x() < Enemy_Area.get_right() && bullet.get_x() > Enemy_Area.get_left() && bullet.get_y() < Enemy_Area.get_top() && bullet.get_y() > Enemy_Area.get_bottom())
 	{
@@ -1110,6 +1172,8 @@ void getting_shot(Drone &Enemy_Drone,Box Enemy_Area,Bullet &bullet, Animation &e
 		bullet.get_state() = 0;
 		bullet.set_initial(0, 0, 0);
 		Enemy_Drone.bounce();
+		sound.play();
+		
 	}
 }
 
