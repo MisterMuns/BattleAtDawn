@@ -10,12 +10,13 @@
 
 #include "game_pad.h"
 
+using namespace std;
 
 #include "timer.h" // use the time / clock reading function
 
 #include <MMSystem.h>
 
-using namespace std;
+
 
 #pragma comment(lib,"winmm.lib") // links a windows library
 
@@ -59,7 +60,7 @@ public:
 	double get_aim();
 	bool get_gamepad_shoot();
 	void draw();
-	virtual ~Drone() { ; }
+	~Drone() { ; }
 };
 
 Drone::Drone(double _x, double _y, double _theta)
@@ -79,6 +80,7 @@ Drone::Drone(double _x, double _y, double _theta)
 	hp = 100;							//Drone starts at full health (100 health points = 100 pixels)
 	aim_angle = 0;
 	acceleration = 9.5;
+	
 
 	index = 1;
 	create_sprite("FrontView.png", id_drone);
@@ -103,6 +105,7 @@ void Drone::reset(double _x, double _y, double _theta)
 	hp = 100;							//Drone starts at full health (100 health points = 100 pixels)
 	aim_angle = 0;
 	acceleration = 9.5;
+	GS[9] = 0;
 
 	index = 1;
 	create_sprite("FrontView.png", id_drone);
@@ -211,11 +214,12 @@ void Drone::controller()
 
 	
 
-	
+	/*
 	for(int i=0;i<N_GS;i++) 
 	{
 	cout << GS[i] << " ";
 	}
+	*/
 	cout << "\n";
 	
 }
@@ -318,7 +322,7 @@ void Drone::bounce()
 	}
 
 	if (hp >= 5) {
-		hp -= 5;			   //Drone health (100 pixels) - take 20 damage when bounch occurs
+		hp -= 20;			   //Drone health (100 pixels) - take 20 damage when bounch occurs
 	}
 	else {
 		hp = 0;
@@ -338,6 +342,7 @@ private:
 	double dist_x;
 	double dist_y;
 	double radius, radius_limit;
+	static int enemy_killcount;
 	
 public:
 	Enemy() { ; }
@@ -348,7 +353,9 @@ public:
 	void map_rel(Drone name1);
 	double get_aim(Drone player);
 	double get_radius() { return radius; }
-	virtual ~Enemy() { ; }
+	void check_health();
+	void reset_killcount();
+	~Enemy() { ; }
 
 };
 
@@ -365,11 +372,11 @@ void Enemy::inputs(double player_x, double player_y)
 	{
 		if (dist_y > 0)
 		{
-			in_thrust += 2.00;
+			in_thrust += 5.00;
 		}
 		else if (dist_y < 0)
 		{
-			in_thrust -= 2.00;
+			in_thrust -= 5.00;
 		}
 
 		if (dist_x < 0)
@@ -448,6 +455,23 @@ void Enemy::map_rel(Drone name1)
 		y -= name1.get_y_dot() * 0.65;
 	}
 
+}
+
+void Enemy::check_health()
+{
+	if (hp <= 0)
+	{
+		x = 100000;
+		y = 100000;
+		hp = 100;
+		enemy_killcount++;
+	}
+	cout << enemy_killcount << endl;
+}
+
+void Enemy::reset_killcount()
+{
+	enemy_killcount = 0;
 }
 
 class Box
@@ -568,7 +592,7 @@ public:
 	double get_x() { return x; }
 	double get_y() { return y; }
 	void map_rel(Drone name1);
-	virtual ~Bullet() { ; }
+	~Bullet() { ; }
 };
 
 Bullet::Bullet()
@@ -578,7 +602,7 @@ Bullet::Bullet()
 	theta = 0;
 	create_sprite("Bullet.png", id_bullet);
 	state = 0;
-	speed = 10;
+	speed = 4;
 	duration = 0;
 }
 
@@ -605,7 +629,7 @@ void Bullet::trajectory()
 
 		duration++;
 
-		if (duration > 200)
+		if (duration > 250)
 		{
 			state = 0;
 			duration = 0;
@@ -906,8 +930,11 @@ void restore_hp(Drone& name1, Box name2);
 void collision(Drone &A, Box Drone, Box Rigid, Animation &_animation, Sound _sound);
 void Health_Bar(Enemy enemy, Box black, Box green);
 void getting_shot(Drone &Enemy_Drone, Box Enemy_Area, Bullet &bullet, Animation &explosion, Sound sound);
-const int nb_enemy = 1;
+const int nb_enemy = 3;
 const int nb_coins = 5;
+const int enemy_bullet_limit = 3;
+const int player_bullet_limit = 3;
+int Enemy::enemy_killcount = 0;
 
 int main()
 {
@@ -918,6 +945,7 @@ int main()
 	Box Rigid[5];
 	Box HP_zone1(0, 0, 200, 200, 0.0, 0.5, 0.0);
 	Bullet bullet[10];
+	Bullet bullet_enemy[enemy_bullet_limit];
 	Coin coins[nb_coins];						//coin class is added
 
 	Box D1_HPb(D1.get_x(), (D1.get_y() + 40), 106, 16, 0.0, 0.0, 0.0);	//Black outline of the HP bar
@@ -940,11 +968,13 @@ int main()
 
 	for (;;)
 	{
+
 		bool trigger = 0;
 		int shoot_delay;
+		int shoot_delay_enemy[nb_enemy];
 
 		D1.reset(400, 300, 0);
-
+		E_Array[0].reset_killcount();
 		
 		for (int i = 0; i < nb_enemy; i++)
 		{
@@ -963,12 +993,20 @@ int main()
 		int id_laser;
 		create_sprite("Laser.png", id_laser);
 
-		for (int i = 0; i < 10; i++)
+		for (int i = 0; i < player_bullet_limit; i++)
 		{
 			bullet[i].get_state() = 0;
 			shoot_delay = 0;
 		}
 
+		for (int i = 0; i < enemy_bullet_limit; i++)
+		{
+			bullet_enemy[i].get_state() = 0;
+		}
+		for (int i = 0; i < nb_enemy; i++)
+		{
+			shoot_delay_enemy[i] = 0;
+		}
 
 		for (;;)
 		{
@@ -989,7 +1027,7 @@ int main()
 			
 			for (int i = 0; i < nb_enemy; i++)
 			{
-				E_Area[i].reset(E_Array[i].get_x(), E_Array[i].get_y(), 120, 40, 1.0, 1.0, 1.0);
+				E_Area[i].reset(E_Array[i].get_x(), E_Array[i].get_y(), 150, 100, 1.0, 1.0, 1.0);
 			}
 			
 
@@ -1017,14 +1055,14 @@ int main()
 			
 			
 
-			for (int i = 0; i < 5; i++)
+			for (int i = 0; i < 1; i++)
 			{
-				Rigid[i].reset((Layer4.get_layerX() - 500) + i * 200, Layer4.get_layerY(), 20, 200, 0.0, 0.0, 0.0);  //-500 in x position relative to Layer4
+				Rigid[i].reset((Layer4.get_layerX() - 500), Layer4.get_layerY()-300, 300, 20, 0.0, 0.0, 0.0);  //-500 in x position relative to Layer4
 				Rigid[i].draw();
 				collision(D1, D1_Area, Rigid[i], collision_animation, collision_sound);
 			}
 
-			for (int i = 0; i < 10; i++)
+			for (int i = 0; i < player_bullet_limit; i++)
 			{
 
 				if (bullet[i].get_state() == 1)
@@ -1035,36 +1073,71 @@ int main()
 
 				if (shoot_delay > 10 && bullet[i].get_state() == 0)
 				{
-					bullet[i].set_initial(E_Array[0].get_x(), E_Array[0].get_y(), E_Array[0].get_aim(D1));
+					bullet[i].set_initial(D1.get_x(), D1.get_y(), D1.get_aim());
 					bullet[i].get_state() = 1;
 					shoot_delay = 0;
 					laser.play();
 				}
 			}
-			
 
-			for (int i = 0; i < 10; i++)
+			for (int i = 0; i < nb_enemy; i++)
 			{
-				getting_shot(D1, D1_Area, bullet[i], explosion, boom);
+				for (int j = 0; j < enemy_bullet_limit; j++)
+				{
+
+					if (bullet_enemy[j].get_state() == 1)
+					{
+						bullet_enemy[j].trajectory();
+						continue;
+					}
+
+					if (shoot_delay_enemy[i] > 40 && bullet_enemy[j].get_state() == 0)
+					{
+						bullet_enemy[j].set_initial(E_Array[i].get_x(), E_Array[i].get_y(), E_Array[i].get_aim(D1));
+						bullet_enemy[j].get_state() = 1;
+						shoot_delay_enemy[i] = 0;
+						laser.play();
+					}
+				}
 			}
 
+			
+			for (int i = 0; i < nb_enemy; i++)
+			{
+				for (int i = 0; i < player_bullet_limit; i++)
+				{
+					getting_shot(E_Array[i], E_Area[i], bullet[i], explosion, boom);
+				}
+			}
+
+			/*
+			for (int i = 0; i < enemy_bullet_limit; i++)
+			{
+				getting_shot(D1, D1_Area, bullet_enemy[i], explosion, boom);
+			}
+			*/
 			explosion.animate();
 			collision_animation.animate();
 			
-			/*
-			if (E_Array[0].get_radius() < 500)
+			
+			for (int i = 0; i < nb_enemy; i++)
 			{
-				shoot_delay++;
+				if (E_Array[i].get_radius() < 500)
+				{
+					shoot_delay_enemy[i]++;
+				}
 			}
-			*/
+			
 
 
-			for (int i = 0; i < 10; i++)
+			for (int i = 0; i < player_bullet_limit; i++)
 			{
-				//getting_shot(E_Array[0], E_Area[0], bullet[i]);
 				bullet[i].map_rel(D1);
 			}
-
+			for (int i = 0; i < enemy_bullet_limit; i++)
+			{
+				bullet_enemy[i].map_rel(D1);
+			}
 			
 
 
@@ -1072,12 +1145,7 @@ int main()
 			{
 				shoot_delay++;
 			}
-			/*
-			if (D1.get_gamepad_shoot() == 1)
-			{
-				shoot_delay++;
-			}
-			*/
+			
 			
 
 			D1.set_delta_time();
@@ -1091,8 +1159,13 @@ int main()
 
 			grab_coin(D1_Area, coins, nb_coins);
 
-			//D1.controller();
-
+			
+			D1.controller();
+			if (D1.get_gamepad_shoot() == 1)
+			{
+				shoot_delay++;
+			}
+			
 			
 			//Enemy Class
 			for (int i = 0; i < nb_enemy; i++)
@@ -1102,6 +1175,8 @@ int main()
 				E_Array[i].calculate();
 				E_Array[i].stability();
 				E_Array[i].draw();
+				E_Array[i].check_health();
+				//E_Area[i].draw();
 			}
 
 
