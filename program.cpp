@@ -726,83 +726,6 @@ double map::get_layerX() {
 double map::get_layerY() {
 	return layer_y;
 }
-//Declare array of coin objects
-//map their locations on the map
-//their x and y position update with the map
-//draw (if state = 1) them to the screen above the layers but below the drone
-//After: they can be grabbed and state = 0 to disappear... so only draw if state = 1
-//with time, they will return to state 1. 
-
-class Coin {
-	double coin_x;
-	double coin_y;
-	int id_coin1;				//ID for coin sprite
-	int id_coin2;
-	int id_coin3;
-	int id_coin4;
-	double coin_rotating;			//no turn, 1, half way is 2, full turn is 3
-	bool coin_state;					//when state == 0, coin disappears, coin returns to state == 1 after time passes
-	static int collected_coins;			//static variable shared among all objects, they will all increment this value when they are grabbed! (grab_coin function being called)
-
-public:
-	Coin();										//constructor for each coin object, all should spawn ie: state == 1
-	double& get_x() { return coin_x; };			//access function necessary when mapping coins from a text file
-	double& get_y() { return coin_y; };			//access function necessary when mapping coins from a text file
-	bool& get_state() { return coin_state; };
-	int& get_collected_coins() { return collected_coins; };
-	void draw_coin(Drone& name1);			//this is called to draw each coin object, using layer 4 relative displacement	
-};
-
-Coin::Coin() {
-	coin_x = 0.0;
-	coin_y = 0.0;
-	create_sprite("pirate_coin1.png", id_coin1);
-	create_sprite("pirate_coin2.png", id_coin2);
-	create_sprite("pirate_coin3.png", id_coin3);
-	create_sprite("pirate_coin4.png", id_coin4);
-	coin_rotating = 2.0;
-	coin_state = 1;
-}
-
-void Coin::draw_coin(Drone& name1) {
-
-	//coin position changes with map/drone movement:
-	if (name1.get_x() >= 1050) {		//1050 and 350 to start smooth scrolling before drone hits boundary
-		coin_x -= name1.get_x_dot() * 0.65;					//***add depth factor***
-	}
-	else if (name1.get_x() <= 350) coin_x -= name1.get_x_dot() * 0.65;
-
-	if (name1.get_y() >= 500) {		//1050 and 350 to start smooth scrolling before drone hits boundary
-		name1.get_y() = 500;
-		coin_y -= name1.get_y_dot() * 0.65;				//***add depth factor***
-	}
-	else if (name1.get_y() <= 250)
-	{
-		name1.get_y() = 250;
-		coin_y -= name1.get_y_dot() * 0.65;
-	}
-
-	//drawing a rotating coin
-	if (coin_rotating >= 2.0 && coin_rotating < 3.0 && coin_state == 1) {
-		draw_sprite(id_coin1, coin_x, coin_y, 0, 1);
-		coin_rotating += 0.05;
-	}
-	else if (coin_rotating >= 3.0 && coin_rotating < 4.0 && coin_state == 1) {
-		draw_sprite(id_coin2, coin_x, coin_y, 0, 1);
-		coin_rotating += 0.05;
-	}
-	else if (coin_rotating >= 4.0 && coin_rotating < 5.0 && coin_state == 1) {
-		draw_sprite(id_coin3, coin_x, coin_y, 0, 1);
-		coin_rotating += 0.05;
-	}
-	else if (coin_rotating >= 5.0 && coin_rotating < 6.0 && coin_state == 1) {
-		draw_sprite(id_coin4, coin_x, coin_y, 0, 1);
-		coin_rotating += 0.05;
-	}
-	else if (coin_rotating >= 6.0) {
-		coin_rotating = 2.0;
-	}
-}
 
 class Animation
 {
@@ -814,15 +737,16 @@ private:
 	int delay;
 	int x;
 	int y;
+	double scale;
 	bool trigger_state;
 public:
-	Animation(char file_seq[], double _duration);
+	Animation(char file_seq[], double _duration, double _scale);
 	void trigger(double _x, double _y);
 	void animate();
 	bool& return_trig() { return trigger_state; }
 };
 
-Animation::Animation(char file_seq[], double _duration)
+Animation::Animation(char file_seq[], double _duration, double _scale)
 {
 	index = 0;
 	delay = 0;
@@ -830,6 +754,7 @@ Animation::Animation(char file_seq[], double _duration)
 	x = 0;
 	y = 0;
 	trigger_state = 0;
+	scale = _scale;
 
 	ifstream fin;
 	fin.open(file_seq);
@@ -864,7 +789,7 @@ void Animation::animate()
 
 	if (trigger_state == 1)
 	{
-		draw_sprite(sequence[index], x, y, 0, 1);
+		draw_sprite(sequence[index], x, y, 0, scale);
 
 		delay++;
 
@@ -881,6 +806,99 @@ void Animation::animate()
 		}
 	}
 }
+
+/*
+Declare array of coin objects. Map each object location x and y position from a map_locations function, updates with moving map. Draw coins (if state = 1)
+the to the screen above the layers but below the drone After: they can be grabbed with grab_coin function and state = 0 to disappear... so only draw if state = 1
+reset_coin function to return coin object to state 1. 
+*/
+
+class Coin {
+	double coin_x;
+	double coin_y;			
+	bool coin_state;					//when state == 0, coin disappears, coin returns to state == 1 after time passes
+	static int collected_coins;			//static variable shared among all objects, they will all increment this value when they are grabbed! (grab_coin function being called)
+
+	/*  No longer apart of the coin class:
+	int id_coin1;
+	int id_coin2;
+	int id_coin3;
+	int id_coin4;
+	double coin_rotating;
+	*/
+
+public:
+	Coin();										//constructor for each coin object, all should spawn ie: state == 1
+	double& get_x() { return coin_x; };			//access function necessary when mapping coins from a text file
+	double& get_y() { return coin_y; };			//access function necessary when mapping coins from a text file
+	bool& get_state() { return coin_state; };
+	int& get_collected_coins() { return collected_coins; };
+	void Coin::draw_coin(Drone& name1, Animation& coin_animations);	 //this is called to draw each coin object, using layer 4 relative displacement and coin animation
+};
+
+Coin::Coin() {
+	coin_x = 0.0;
+	coin_y = 0.0;
+	coin_state = 1;
+
+	/*   No longer apart of the coin class:
+	create_sprite("pirate_coin1.png", id_coin1);
+	create_sprite("pirate_coin2.png", id_coin2);
+	create_sprite("pirate_coin3.png", id_coin3);
+	create_sprite("pirate_coin4.png", id_coin4);
+	coin_rotating = 2.0;
+	*/
+}
+
+void Coin::draw_coin(Drone& name1, Animation& coin_animations) {
+
+	//Coin position changes with map/drone movement:
+	if (name1.get_x() >= 1050) {		//1050 and 350 to start smooth scrolling before drone hits boundary
+		coin_x -= name1.get_x_dot() * 0.65;					//***add depth factor***
+	}
+	else if (name1.get_x() <= 350) coin_x -= name1.get_x_dot() * 0.65;
+
+	if (name1.get_y() >= 500) {		//1050 and 350 to start smooth scrolling before drone hits boundary
+		name1.get_y() = 500;
+		coin_y -= name1.get_y_dot() * 0.65;				//***add depth factor***
+	}
+	else if (name1.get_y() <= 250)
+	{
+		name1.get_y() = 250;
+		coin_y -= name1.get_y_dot() * 0.65;
+	}
+
+	// Drawing coin object 
+	if (coin_state == 1) {                                //trigger animation located at the coin
+		coin_animations.trigger(coin_x, coin_y);            //Each coin animation should occur where the respective coin object resides
+		coin_animations.animate();
+	}
+
+	/*   This method is outdated, will now use Animation class to animate the coin:
+	
+	if (coin_rotating >= 2.0 && coin_rotating < 3.0 && coin_state == 1) {
+		draw_sprite(id_coin1, coin_x, coin_y, 0, 1);
+		coin_rotating += 0.05;
+	}
+	else if (coin_rotating >= 3.0 && coin_rotating < 4.0 && coin_state == 1) {
+		draw_sprite(id_coin2, coin_x, coin_y, 0, 1);
+		coin_rotating += 0.05;
+	}
+	else if (coin_rotating >= 4.0 && coin_rotating < 5.0 && coin_state == 1) {
+		draw_sprite(id_coin3, coin_x, coin_y, 0, 1);
+		coin_rotating += 0.05;
+	}
+	else if (coin_rotating >= 5.0 && coin_rotating < 6.0 && coin_state == 1) {
+		draw_sprite(id_coin4, coin_x, coin_y, 0, 1);
+		coin_rotating += 0.05;
+	}
+	else if (coin_rotating >= 6.0) {
+		coin_rotating = 2.0;
+	}
+	*/
+
+}
+
 
 class Sound
 {
@@ -988,8 +1006,9 @@ int main()
 
 	Box restart(0, 0, 400, 200, 0.0, 0.0, 0.0);
 
-	Animation explosion("Animation/Explosion/animation_sequence.txt", 1);
-	Animation collision_animation("Animation/Collision/animation_sequence.txt", 1);
+	Animation explosion("Animation/Explosion/animation_sequence.txt", 1, 1);
+	Animation collision_animation("Animation/Collision/animation_sequence.txt", 1, 1);
+	Animation coin_animation("Animation/Coins/animation_sequence.txt", 100, 0.2);				//coin png scaled down to 0.2
 
 	Sound boom("boom.wav");
 	Sound laser("laser.wav");
@@ -1048,7 +1067,7 @@ int main()
 			
 			//Drawing of coins
 			for (int i = 0; i < nb_coins; i++) {
-				coins[i].draw_coin(D1);
+				coins[i].draw_coin(D1, coin_animation);			//Added Animation class to animate coin
 			}
 
 			D1_Area.reset(D1.get_x(), D1.get_y(), 120, 40, 1.0, 1.0, 1.0);
@@ -1354,7 +1373,7 @@ void grab_coin(Box& Drone_Area, Coin coin_array[], int nb_coins) {		//when a coi
 			//coin_array[i].get_state() == 1 means the coin has previously not been grabbed already
 			coin_array[i].get_state() = 0;
 			coin_array[i].get_collected_coins() += 1;
-			cout << "\nYou have collected: " << coin_array[i].get_collected_coins() << " so far!";
+			cout << "\n\tYou have collected: " << coin_array[i].get_collected_coins() << " so far!";
 		}
 	}
 }
@@ -1512,7 +1531,7 @@ void scoreboard(char scoreboard_file[], char _player_name[], Enemy enemy_array[]
 		_thirdpnts = playerpnts;
 	}
 	else if (playerpnts < _thirdpnts) {
-		cout << "\n Too bad " << _player_name << ". " << playerpnts << " was not high enough to reach the leaderboards! Keep trying, you can beat " << _first << "!";
+		cout << "\n\n\n  Too bad " << _player_name << ". " << playerpnts << " was not high enough to reach the leaderboards! Keep trying, you can beat " << _first << "!";
 	}
 
 	//Output current updated scoreboard to the scoreboard file
