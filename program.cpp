@@ -220,7 +220,7 @@ void Drone::controller()
 	cout << GS[i] << " ";
 	}
 	*/
-	cout << "\n";
+	//cout << "\n"; Muneeb you forgot to comment this out so the command screen is just constantly making spaces LMAO
 	
 }
 
@@ -355,6 +355,7 @@ public:
 	double get_radius() { return radius; }
 	void check_health();
 	void reset_killcount();
+	int get_killcount();
 	~Enemy() { ; }
 
 };
@@ -466,13 +467,18 @@ void Enemy::check_health()
 		hp = 100;
 		enemy_killcount++;
 	}
-	cout << enemy_killcount << endl;
+	//cout << enemy_killcount << endl;
 }
 
 void Enemy::reset_killcount()
 {
 	enemy_killcount = 0;
 }
+
+int Enemy::get_killcount() {
+	return enemy_killcount;
+}
+
 
 class Box
 {
@@ -670,6 +676,7 @@ class map { //This class creates the layer objects that the environment is compo
 
 public:
 	map(char layer_file_name[], double depth_factor, double layerX, double layerY, double scale);		//constructor to initialize the layer object, called outside of the infinite draw loop
+	void reset(char layer_file_name[], double depth_factor, double layerX, double layerY, double scale);
 	void draw_layer(Drone& name1);			//this will contain "draw_sprite()" and manipulate x and y of layer to track drone object properly.Called inside infinite draw loop
 	double get_layerX();
 	double get_layerY();
@@ -677,6 +684,14 @@ public:
 };
 
 map::map(char layer_file_name[], double depth_factor, double layerX, double layerY, double scale) {		//takes the file name for this object, to create sprite
+	layer_x = layerX;
+	layer_y = layerY;
+	layer_scale = scale;
+	df = depth_factor;
+	create_sprite(layer_file_name, id_layer);
+}
+
+void map::reset(char layer_file_name[], double depth_factor, double layerX, double layerY, double scale) {
 	layer_x = layerX;
 	layer_y = layerY;
 	layer_scale = scale;
@@ -737,8 +752,6 @@ public:
 	int& get_collected_coins() { return collected_coins; };
 	void draw_coin(Drone& name1);			//this is called to draw each coin object, using layer 4 relative displacement	
 };
-
-int Coin::collected_coins = 0;				//Can't initialize static member variables in the constructor
 
 Coin::Coin() {
 	coin_x = 0.0;
@@ -930,17 +943,33 @@ void restore_hp(Drone& name1, Box name2);
 void collision(Drone &A, Box Drone, Box Rigid, Animation &_animation, Sound _sound);
 void Health_Bar(Enemy enemy, Box black, Box green);
 void getting_shot(Drone &Enemy_Drone, Box Enemy_Area, Bullet &bullet, Animation &explosion, Sound sound);
+void scoreboard(char scoreboard_file[], char _player_name[], Enemy enemy_array[], Coin coin_array[], char _first[], char _second[], char _third[], double& _firstpnts,
+	double& _secondpnts, double& _thirdpnts, bool& scoreboard_trigger);
 const int nb_enemy = 3;
-const int nb_coins = 5;
+const int nb_coins = 10;
 const int enemy_bullet_limit = 3;
 const int player_bullet_limit = 3;
 int Enemy::enemy_killcount = 0;
+int Coin::collected_coins = 0;				//Can't initialize static member variables in the constructor
 
 int main()
 {
 	initialize_graphics();
+
+	char player_name[20];										//Player name array used for scoreboard and end screen cout
+	cout << "\n\n\n\tPlease input a name, no spaces or special characters, and press enter!\n\n\n\t\t Name: ";
+	cin >> player_name;											//Need to add error check to ensure appropriate name was chosen?
+	
+	//Char arrays and points to store scoreboard names/points
+	char firstplace[20], secondplace[20], thirdplace[20];
+	double firstpnts, secondpnts, thirdpnts;
+
 	Drone D1(0, 0, 0);
 	Box D1_Area(0, 0, 120, 40, 1.0, 1.0, 1.0);
+
+	//Initializing of Layers
+	map Layer1("Layer1.png", 0.5, 700.0, 500, 1.8);		//Creating Layer1 object of the map class, attaching the appropriate image and depth factor (df)
+	map Layer4("Layer4.png", 0.6, 700.0, 100, 1.65);	//arguments: (image file, its speed relative to other layers (df), x and y position in window relative to other layers, image scaling)
 
 	Box Rigid[5];
 	Box HP_zone1(0, 0, 200, 200, 0.0, 0.5, 0.0);
@@ -966,10 +995,11 @@ int main()
 	Sound laser("laser.wav");
 	Sound collision_sound("collision.wav");
 
-	for (;;)
+	for (;;)		//***_RESTART LOOP_***
 	{
 
 		bool trigger = 0;
+		bool scoreboard_trigger = 1;						//After restart, reset trigger to 1 so scoreboard will update for next game loop
 		int shoot_delay;
 		int shoot_delay_enemy[nb_enemy];
 
@@ -981,13 +1011,13 @@ int main()
 			E_Array[i].reset(1000 + 50*i, 300 + 60*i, 0);
 		}
 		
-		//(1) - Initializing of Layers
-		map Layer1("Layer1.png", 0.5, 700.0, 500, 1.8);		//Creating Layer1 object of the map class, attaching the appropriate image and depth factor (df)
-		map Layer4("Layer4.png", 0.6, 700.0, 100, 1.65);	//arguments: (image file, its speed relative to other layers (df), x and y position in window relative to other layers, image scaling)
-		
+		//Added map class reset function to replace constructor from loop
+		Layer1.reset("Layer1.png", 0.5, 700.0, 500, 1.8);
+		Layer4.reset("Layer4.png", 0.6, 700.0, 100, 1.65);
+
 		//Initialization of coins on layers
 		map_coins("coin_locations.txt", coins, nb_coins);
-		//Reset state of coins to 1
+		//Reset state of grabbed coins to 1, allowing them to respawn for next game loop and to decrement the collected_coins variable of the objects
 		reset_state(coins, nb_coins);
 
 		int id_laser;
@@ -1008,13 +1038,11 @@ int main()
 			shoot_delay_enemy[i] = 0;
 		}
 
-		for (;;)
+		for (;;)		//***_GAME LOOP_***
 		{
 			clear();
 
-			//Box Background(300, 300, 2000, 1000, 0.8, 0.8, 1.0);
-			//Background.draw();
-			//(1) - Drawing of Layers
+			//Drawing of Layers
 			Layer1.draw_layer(D1);				//Updating background according to D1 positioning, absolute background so goes first
 			Layer4.draw_layer(D1);
 			
@@ -1179,7 +1207,13 @@ int main()
 				//E_Area[i].draw();
 			}
 
-
+			//Update On-screen scores
+			text("Kills: ", 10, 710, 0.5);
+			text(E_Array[0].get_killcount(), 70, 710, 0.5);
+			text("Coins Collected: ", 10, 680, 0.5);
+			text(coins[0].get_collected_coins(), 190, 680, 0.5);
+			text("Total Score:  ", 10, 650, 0.5);
+			text(((coins[0].get_collected_coins())*20.0)+((E_Array[0].get_killcount())*100.0), 150, 650, 0.5);
 
 			if (D1.get_hp() == 0) {											//Status check, restart drone simulation if HP = 0
 
@@ -1197,14 +1231,29 @@ int main()
 			update();
 		}
 		
+		//***SCOREBOARD LOOP***
 		for(;;) 
 		{
 			clear();
-			double text_x = 255, text_y = 425, text_scale = 1.0;
-			restart.reset(450, 400, 400, 200, 0.0, 0.0, 0.0);				//Backdrop for text
+			double text_x = 450, text_y = 640, text_scale = 1.0;
+			restart.reset(635, 355, 900, 680, 0.0, 0.0, 0.0);				//Backdrop for text
 			restart.draw();
 
-			text("Press R to restart", text_x, text_y, text_scale);		//Text to restart simulation
+			/*File IO should never be in a loop, takes time, so scoreboard input then output occurs once, then use call by reference of arrays to output
+			names and points to the screen*/
+			if (scoreboard_trigger == 1) {
+				scoreboard("scoreboard.txt", player_name, E_Array, coins, firstplace, secondplace, thirdplace, firstpnts, secondpnts, thirdpnts, scoreboard_trigger);
+			}
+
+			//Displaying all scoreboard text
+			text("Press R to restart", text_x, text_y, text_scale);
+			text("Highscores: ", text_x, text_y - 100, text_scale);
+			text(firstplace, text_x, text_y - 200, text_scale);
+			text(firstpnts, text_x + 400, text_y - 200, text_scale);
+			text(secondplace, text_x, text_y - 300, text_scale);
+			text(secondpnts, text_x + 400, text_y - 300, text_scale);
+			text(thirdplace, text_x, text_y - 400, text_scale);
+			text(thirdpnts, text_x + 400, text_y - 400, text_scale);
 
 			if (KEY('R')) 
 			{
@@ -1318,4 +1367,172 @@ void reset_state(Coin coin_array[], int nb_coins) {
 		}
 	}
 
+}
+
+/*function that takes player_name and coins/drones killed and score board file.
+In the function, points for the player will be calculated. File input will occur and grab the data from the scoreboard file. Player will be compared
+to the data in the file and sorted. File output will occur and overwrite with the new sorted data to scoreboard file. Names and values will be returned
+from the function so it can be drawn to the end screen continuously, below "Press R to restart"
+*/
+void scoreboard(char scoreboard_file[], char _player_name[], Enemy enemy_array[], Coin coin_array[], char _first[], char _second[], char _third[], double& _firstpnts, double& _secondpnts, double& _thirdpnts, bool& scoreboard_trigger) {
+	int i;
+	double tempfirstpnts, tempsecondpnts, tempthirdpnts, playerpnts;	//store the scoreboard points
+	char temp_first[20], temp_second[20], temp_third[20];				//store the scoreboard names
+
+	playerpnts = ((coin_array[0].get_collected_coins()) * 20.0) + ((enemy_array[0].get_killcount())*100); 	/* All coin objects have the same collected_coins value, I said each coin is 20 points. ***Dead drones must be added***
+																These points will be compared to the temp points to see where the player belongs */
+																//Start grabbing current scoreboard names/points
+	ifstream fin;
+
+	fin.open(scoreboard_file);
+
+	if (!fin) {
+		cout << "\nError opening scoreboard file!";
+	}
+
+	fin >> temp_first >> tempfirstpnts >> temp_second >> tempsecondpnts >> temp_third >> tempthirdpnts;
+
+	fin.close();
+
+	//***Following Code is in Place to Ensure Scoreboard File is Organized from Highest to Lowest before inputting to arrays***
+
+	if (tempfirstpnts > tempsecondpnts) {
+		if (tempfirstpnts > tempthirdpnts) {
+			for (i = 0; i < 20; i++) {
+				_first[i] = temp_first[i];
+			}
+			_firstpnts = tempfirstpnts;
+			if (tempsecondpnts > tempthirdpnts) {
+				for (i = 0; i < 20; i++) {
+					_second[i] = temp_second[i];
+				}
+				_secondpnts = tempsecondpnts;
+				for (i = 0; i < 20; i++) {
+					_third[i] = temp_third[i];
+				}
+				_thirdpnts = tempthirdpnts;
+			}
+			else if (tempsecondpnts < tempthirdpnts) {
+				for (i = 0; i < 20; i++) {
+					_second[i] = temp_third[i];
+				}
+				_secondpnts = tempthirdpnts;
+				for (i = 0; i < 20; i++) {
+					_third[i] = temp_second[i];
+				}
+				_thirdpnts = tempsecondpnts;
+			}
+		}
+		else if (tempfirstpnts < tempthirdpnts) {
+			for (i = 0; i < 20; i++) {
+				_first[i] = temp_third[i];
+			}
+			_firstpnts = tempthirdpnts;
+			for (i = 0; i < 20; i++) {
+				_second[i] = temp_first[i];
+			}
+			_secondpnts = tempfirstpnts;
+			for (i = 0; i < 20; i++) {
+				_third[i] = temp_second[i];
+			}
+			_thirdpnts = tempsecondpnts;
+		}
+	}
+	else if (tempfirstpnts < tempsecondpnts) {
+		if (tempfirstpnts > tempthirdpnts) {
+			for (i = 0; i < 20; i++) {
+				_first[i] = temp_second[i];
+			}
+			_firstpnts = tempsecondpnts;
+			for (i = 0; i < 20; i++) {
+				_second[i] = temp_first[i];
+			}
+			_secondpnts = tempfirstpnts;
+			for (i = 0; i < 20; i++) {
+				_third[i] = temp_third[i];
+			}
+			_thirdpnts = tempthirdpnts;
+		}
+		else if (tempfirstpnts < tempthirdpnts) {
+			for (i = 0; i < 20; i++) {
+				_third[i] = temp_first[i];
+			}
+			_thirdpnts = tempfirstpnts;
+			if (tempsecondpnts > tempthirdpnts) {
+				for (i = 0; i < 20; i++) {
+					_first[i] = temp_second[i];
+				}
+				_firstpnts = tempsecondpnts;
+				for (i = 0; i < 20; i++) {
+					_second[i] = temp_third[i];
+				}
+				_secondpnts = tempthirdpnts;
+			}
+			else if (tempsecondpnts < tempthirdpnts) {
+				for (i = 0; i < 20; i++) {
+					_first[i] = temp_third[i];
+				}
+				_firstpnts = tempthirdpnts;
+				for (i = 0; i < 20; i++) {
+					_second[i] = temp_second[i];
+				}
+				_secondpnts = tempsecondpnts;
+			}
+		}
+	}
+
+	/*At this point, the scoreboard names have been input to first/second/third place char arrays, now compare player's point to scoreboard and adjust
+	first second and third place arrays accordingly */
+
+	if (playerpnts >= _firstpnts) {				// >= means if same points reached, player steals rank in leaderboard
+		for (i = 0; i < 20; i++) {
+			_third[i] = _second[i];
+		} for (i = 0; i < 20; i++) {
+			_second[i] = _first[i];
+		} for (i = 0; i < 20; i++) {
+			_first[i] = _player_name[i];
+		}
+		_thirdpnts = _secondpnts;
+		_secondpnts = _firstpnts;
+		_firstpnts = playerpnts;
+	}
+	else if (playerpnts >= _secondpnts) {
+		for (i = 0; i < 20; i++) {
+			_third[i] = _second[i];
+		} for (i = 0; i < 20; i++) {
+			_second[i] = _player_name[i];
+		}
+		_thirdpnts = _secondpnts;
+		_secondpnts = playerpnts;
+	}
+	else if (playerpnts >= _thirdpnts) {
+		for (i = 0; i < 20; i++) {
+			_third[i] = _player_name[i];
+		}
+		_thirdpnts = playerpnts;
+	}
+	else if (playerpnts < _thirdpnts) {
+		cout << "\n Too bad " << _player_name << ". " << playerpnts << " was not high enough to reach the leaderboards! Keep trying, you can beat " << _first << "!";
+	}
+
+	//Output current updated scoreboard to the scoreboard file
+
+	ofstream fout;
+
+	fout.open(scoreboard_file);
+
+	if (!fout) {
+		cout << "failed opening file output file";
+	}
+
+	fout << _first << " " << _firstpnts << "\n";
+	fout << _second << " " << _secondpnts << "\n";
+	fout << _third << " " << _thirdpnts;
+
+	fout.close();
+
+	/*Now trigger scoreboard boolean so scoreboard function is not called again in loop.Then start drawing to screen the new end screen using the
+		new scoreboard names / points (used call by reference, should be able to access scoreboard names/points outside of this function) */
+
+	scoreboard_trigger = 0;
 }
