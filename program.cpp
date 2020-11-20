@@ -45,6 +45,7 @@ public:
 	Drone(double _x, double _y, double _theta);
 	void calculate();
 	void reset(double _x, double _y, double _theta);
+	void reset2(double _x, double _y, double _theta);
 	double get_x();
 	double get_x_dot() { return x_dot; }
 	double& get_y();
@@ -109,6 +110,29 @@ void Drone::reset(double _x, double _y, double _theta)
 
 	index = 1;
 	create_sprite("FrontView.png", id_drone);
+	power_count = 0;
+}
+
+void Drone::reset2(double _x, double _y, double _theta)
+{
+	mass = 5.0;
+	x = _x;
+	x_dot = 0.0;
+	x_dotdot = 0.0;
+	y = _y;
+	y_dot = 0.0;
+	y_dotdot = 0.0;
+	theta = _theta;
+	in_thrust = 49.25;
+	out_thrust = 0.0;
+	delta_time = 0.1;
+	in_roll = 0.0;
+	hp = 100;							//Drone starts at full health (100 health points = 100 pixels)
+	aim_angle = 0;
+	acceleration = 9.5;
+	GS[9] = 0;
+
+	index = 1;
 	power_count = 0;
 }
 
@@ -676,7 +700,7 @@ class map { //This class creates the layer objects that the environment is compo
 
 public:
 	map(char layer_file_name[], double depth_factor, double layerX, double layerY, double scale);		//constructor to initialize the layer object, called outside of the infinite draw loop
-	void reset(char layer_file_name[], double depth_factor, double layerX, double layerY, double scale);
+	void reset(double layerX, double layerY);
 	void draw_layer(Drone& name1);			//this will contain "draw_sprite()" and manipulate x and y of layer to track drone object properly.Called inside infinite draw loop
 	double get_layerX();
 	double get_layerY();
@@ -691,12 +715,9 @@ map::map(char layer_file_name[], double depth_factor, double layerX, double laye
 	create_sprite(layer_file_name, id_layer);
 }
 
-void map::reset(char layer_file_name[], double depth_factor, double layerX, double layerY, double scale) {
+void map::reset(double layerX, double layerY) {
 	layer_x = layerX;
 	layer_y = layerY;
-	layer_scale = scale;
-	df = depth_factor;
-	create_sprite(layer_file_name, id_layer);
 }
 
 void map::draw_layer(Drone& name1) {
@@ -1014,48 +1035,57 @@ int main()
 	Sound laser("laser.wav");
 	Sound collision_sound("collision.wav");
 
-	for (;;)		//***_RESTART LOOP_***
+	D1.reset(400, 300, 0);
+	for (int i = 0; i < nb_enemy; i++)
 	{
+		E_Array[i].reset(1000 + 50 * i, 300 + 60 * i, 0);
+	}
 
-		bool trigger = 0;
-		bool scoreboard_trigger = 1;						//After restart, reset trigger to 1 so scoreboard will update for next game loop
-		int shoot_delay;
-		int shoot_delay_enemy[nb_enemy];
+	int id_laser;
+	create_sprite("Laser.png", id_laser);
 
-		D1.reset(400, 300, 0);
-		E_Array[0].reset_killcount();
-		
-		for (int i = 0; i < nb_enemy; i++)
+	bool trigger;
+	bool scoreboard_trigger;						//After restart, reset trigger to 1 so scoreboard will update for next game loop
+	int shoot_delay;
+	int shoot_delay_enemy[nb_enemy];
+
+	scoreboard_trigger = 1;
+
+		for (;;)		//***_RESTART LOOP_***
 		{
-			E_Array[i].reset(1000 + 50*i, 300 + 60*i, 0);
-		}
-		
-		//Added map class reset function to replace constructor from loop
-		Layer1.reset("Layer1.png", 0.5, 700.0, 500, 1.8);
-		Layer4.reset("Layer4.png", 0.6, 700.0, 100, 1.65);
+			trigger = 0;
 
-		//Initialization of coins on layers
-		map_coins("coin_locations.txt", coins, nb_coins);
-		//Reset state of grabbed coins to 1, allowing them to respawn for next game loop and to decrement the collected_coins variable of the objects
-		reset_state(coins, nb_coins);
+			E_Array[0].reset_killcount();
 
-		int id_laser;
-		create_sprite("Laser.png", id_laser);
+			D1.reset2(400, 300, 0);
+			for (int i = 0; i < nb_enemy; i++)
+			{
+				E_Array[i].reset2(1000 + 50 * i, 300 + 60 * i, 0);
+			}
 
-		for (int i = 0; i < player_bullet_limit; i++)
-		{
-			bullet[i].get_state() = 0;
-			shoot_delay = 0;
-		}
+			for (int i = 0; i < player_bullet_limit; i++)
+			{
+				bullet[i].get_state() = 0;
+				shoot_delay = 0;
+			}
 
-		for (int i = 0; i < enemy_bullet_limit; i++)
-		{
-			bullet_enemy[i].get_state() = 0;
-		}
-		for (int i = 0; i < nb_enemy; i++)
-		{
-			shoot_delay_enemy[i] = 0;
-		}
+			for (int i = 0; i < enemy_bullet_limit; i++)
+			{
+				bullet_enemy[i].get_state() = 0;
+			}
+			for (int i = 0; i < nb_enemy; i++)
+			{
+				shoot_delay_enemy[i] = 0;
+			}
+
+			//Initialization of coins on layers
+			map_coins("coin_locations.txt", coins, nb_coins);
+			//Reset state of grabbed coins to 1, allowing them to respawn for next game loop and to decrement the collected_coins variable of the objects
+			reset_state(coins, nb_coins);
+
+			//Added map class reset function to replace constructor from loop
+			Layer1.reset(700.0, 500);
+			Layer4.reset(700.0, 100);
 
 		for (;;)		//***_GAME LOOP_***
 		{
@@ -1206,13 +1236,13 @@ int main()
 
 			grab_coin(D1_Area, coins, nb_coins);
 
-			
+			/*
 			D1.controller();
 			if (D1.get_gamepad_shoot() == 1)
 			{
 				shoot_delay++;
 			}
-			
+			*/
 			
 			//Enemy Class
 			for (int i = 0; i < nb_enemy; i++)
