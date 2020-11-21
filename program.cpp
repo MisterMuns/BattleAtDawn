@@ -1044,16 +1044,15 @@ int main()
 	int id_laser;
 	create_sprite("Laser.png", id_laser);
 
-	bool trigger;
 	bool scoreboard_trigger;						//After restart, reset trigger to 1 so scoreboard will update for next game loop
 	int shoot_delay;
 	int shoot_delay_enemy[nb_enemy];
 
-	scoreboard_trigger = 1;
+	
 
 		for (;;)		//***_RESTART LOOP_***
 		{
-			trigger = 0;
+			scoreboard_trigger = 1;
 
 			E_Array[0].reset_killcount();
 
@@ -1090,7 +1089,6 @@ int main()
 		for (;;)		//***_GAME LOOP_***
 		{
 			clear();
-
 			//Drawing of Layers
 			Layer1.draw_layer(D1);				//Updating background according to D1 positioning, absolute background so goes first
 			Layer4.draw_layer(D1);
@@ -1275,8 +1273,7 @@ int main()
 
 			//D1_Area.draw();
 
-			if (KEY('R')) break;			//Restart if lost
-			
+			if (KEY('T')) break;			//Restart if lost
 			update();
 		}
 		
@@ -1306,13 +1303,11 @@ int main()
 
 			if (KEY('R')) 
 			{
-				trigger = 1;
 				break;
 			}
 
 			update();
 		}
-		trigger = 0;
 
 	}
 
