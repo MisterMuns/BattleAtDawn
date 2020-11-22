@@ -8,6 +8,7 @@
 
 #include "2D_graphics.h" // use the 2D graphics library
 
+
 #include "game_pad.h"
 
 using namespace std;
@@ -983,7 +984,8 @@ void collision(Drone &A, Box Drone, Box Rigid, Animation &_animation, Sound _sou
 void Health_Bar(Enemy enemy, Box black, Box green);
 void getting_shot(Drone &Enemy_Drone, Box Enemy_Area, Bullet &bullet, Animation &explosion, Sound sound);
 void scoreboard(char scoreboard_file[], char _player_name[], Enemy enemy_array[], Coin coin_array[], char _first[], char _second[], char _third[], double& _firstpnts,
-	double& _secondpnts, double& _thirdpnts, bool& scoreboard_trigger);
+double& _secondpnts, double& _thirdpnts, bool& scoreboard_trigger);
+void Spawn(Enemy E_Array[]);
 const int nb_enemy = 3;
 const int nb_coins = 10;
 const int enemy_bullet_limit = 3;
@@ -1048,7 +1050,7 @@ int main()
 	int shoot_delay;
 	int shoot_delay_enemy[nb_enemy];
 
-	
+	int i_enemy = 0;
 
 		for (;;)		//***_RESTART LOOP_***
 		{
@@ -1088,6 +1090,7 @@ int main()
 
 		for (;;)		//***_GAME LOOP_***
 		{
+			//Spawn(E_Array);
 			clear();
 			//Drawing of Layers
 			Layer1.draw_layer(D1);				//Updating background according to D1 positioning, absolute background so goes first
@@ -1155,8 +1158,7 @@ int main()
 				}
 			}
 
-			for (int i = 0; i < nb_enemy; i++)
-			{
+
 				for (int j = 0; j < enemy_bullet_limit; j++)
 				{
 
@@ -1166,15 +1168,17 @@ int main()
 						continue;
 					}
 
-					if (shoot_delay_enemy[i] > 40 && bullet_enemy[j].get_state() == 0)
+					if (shoot_delay_enemy[i_enemy] > 40 && bullet_enemy[j].get_state() == 0)
 					{
-						bullet_enemy[j].set_initial(E_Array[i].get_x(), E_Array[i].get_y(), E_Array[i].get_aim(D1));
+						bullet_enemy[j].set_initial(E_Array[i_enemy].get_x(), E_Array[i_enemy].get_y(), E_Array[i_enemy].get_aim(D1));
 						bullet_enemy[j].get_state() = 1;
-						shoot_delay_enemy[i] = 0;
+						shoot_delay_enemy[i_enemy] = 0;
 						laser.play();
 					}
 				}
-			}
+			
+				if (i_enemy == nb_enemy) i_enemy = 0;
+				i_enemy++;
 
 			
 			for (int i = 0; i < nb_enemy; i++)
@@ -1580,3 +1584,18 @@ void scoreboard(char scoreboard_file[], char _player_name[], Enemy enemy_array[]
 
 	scoreboard_trigger = 0;
 }
+
+void Spawn(Enemy E_Array[])
+{
+	int v1 = rand() % 100;
+	for (int i = 0; i < 3; i++)
+	{
+		E_Array[i].reset2(0, 0, 0);
+	}
+}
+
+//spawn.randomize();
+//for(int i=0;i<spawn_limit;i++)
+//E_Array[0].reset2(spawn.get_x(), spawn.get_y(),0);
+//if enemy_remaining = 0, spawn_limit + 1;
+//spawn(E_Array[0], reset2, spawn_limit)
