@@ -1189,12 +1189,12 @@ int main()
 				}
 			}
 
-			/*
+			
 			for (int i = 0; i < enemy_bullet_limit; i++)
 			{
 				getting_shot(D1, D1_Area, bullet_enemy[i], explosion, boom);
 			}
-			*/
+			
 			explosion.animate();
 			collision_animation.animate();
 			
