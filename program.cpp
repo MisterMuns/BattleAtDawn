@@ -81,7 +81,7 @@ Drone::Drone(double _x, double _y, double _theta)
 	in_roll = 0.0;
 	hp = 100;							//Drone starts at full health (100 health points = 100 pixels)
 	aim_angle = 0;
-	acceleration = 9.5;
+	acceleration = 4;
 	
 
 	index = 1;
@@ -106,7 +106,7 @@ void Drone::reset(double _x, double _y, double _theta)
 	in_roll = 0.0;
 	hp = 100;							//Drone starts at full health (100 health points = 100 pixels)
 	aim_angle = 0;
-	acceleration = 9.5;
+	acceleration = 4;
 	GS[9] = 0;
 
 	index = 1;
@@ -130,7 +130,7 @@ void Drone::reset2(double _x, double _y, double _theta)
 	in_roll = 0.0;
 	hp = 100;							//Drone starts at full health (100 health points = 100 pixels)
 	aim_angle = 0;
-	acceleration = 9.5;
+	acceleration = 4;
 	GS[9] = 0;
 
 	index = 1;
@@ -162,8 +162,8 @@ void Drone::calculate()
 	out_thrust = in_thrust;
 	y_dotdot = -((1.0 / mass) * (-out_thrust) + gravity);
 	y_dot = y_dot + y_dotdot * delta_time;
-	if (y + y_dot >= 800) {										//changed this so drone no longer moves past y pixels: 200-800
-		y = 800;
+	if (y + y_dot >= 550) {										//changed this so drone no longer moves past y pixels: 200-800
+		y = 550;
 	}
 	else if (y + y_dot <= 200) {
 		y = 200;
@@ -175,8 +175,8 @@ void Drone::calculate()
 	x_dot = x_dot + x_dotdot * delta_time;
 	if (x + x_dot >= 1100 ) {									//changed this so drone no longer moves past x pixels: 300-1100
 		x = 1100;
-	} else if (x + x_dot <= 300) {
-		x = 300;
+	} else if (x + x_dot <= 200) {
+		x = 200;
 	} else x = x + x_dot;
 
 }
@@ -444,7 +444,7 @@ void Enemy::calculate()
 	y_dot = y_dot + y_dotdot * delta_time;
 	y = y + y_dot;
 
-	x_dotdot = -50 * gravity * sin(theta);
+	x_dotdot = -10 * gravity * sin(theta);
 	x_dot = x_dot + x_dotdot * delta_time;
 	x = x + x_dot;
 }
@@ -696,47 +696,92 @@ class map { //This class creates the layer objects that the environment is compo
 	int id_layer;		//id of the layer object that is set when constructor is called
 	double layer_x;	//layer object's x position
 	double layer_y;	//layer object's y position
+	double last_x; //start position of layer, used for draw_coin
+	double last_y; //start position of layer, used for draw_coin
 	double layer_scale;
 	double df;			//depth factor, the depth of the layer will influence scroll rate
+	double max_pos_x;		//furthest layer will displace right as drone moves LEFT
+	double max_neg_x;		//furthest layer will displace left as drone moves RIGHT
+	double max_pos_y;		//furthest layer will displace up as drone moves DOWN
+	double max_neg_y;		//furthest layer will displace down as drone moves UP
 
 public:
-	map(char layer_file_name[], double depth_factor, double layerX, double layerY, double scale);		//constructor to initialize the layer object, called outside of the infinite draw loop
+	map(char layer_file_name[], double depth_factor, double layerX, double layerY, double scale, double _max_pos_x, double _max_neg_x, double _max_pos_y, double _max_neg_y);		//constructor to initialize the layer object, called outside of the infinite draw loop
 	void reset(double layerX, double layerY);
 	void draw_layer(Drone& name1);			//this will contain "draw_sprite()" and manipulate x and y of layer to track drone object properly.Called inside infinite draw loop
 	double get_layerX();
 	double get_layerY();
-
+	double get_lastX();
+	double get_lastY();
+	double get_max_pos_x();
+	double get_max_pos_y();
+	double get_max_neg_x();
+	double get_max_neg_y();
 };
 
-map::map(char layer_file_name[], double depth_factor, double layerX, double layerY, double scale) {		//takes the file name for this object, to create sprite
+map::map(char layer_file_name[], double depth_factor, double layerX, double layerY, double scale, double _max_pos_x, double _max_neg_x, double _max_pos_y, double _max_neg_y) {		//takes the file name for this object, to create sprite
 	layer_x = layerX;
 	layer_y = layerY;
+	last_x = layerX;
+	last_y = layerY;
 	layer_scale = scale;
 	df = depth_factor;
+	max_pos_x = _max_pos_x;
+	max_neg_x = _max_neg_x;
+	max_pos_y = _max_pos_y;
+	max_neg_y = _max_neg_y;
+
 	create_sprite(layer_file_name, id_layer);
 }
 
 void map::reset(double layerX, double layerY) {
 	layer_x = layerX;
 	layer_y = layerY;
+	last_x = layerX;
+	last_y = layerY;
 }
 
 void map::draw_layer(Drone& name1) {
 	//need to adjust x and y of sprite based on drone object, MAKE SURE EQUATIONS ARE GOOD!
 
-	if (name1.get_x() >= 1050) {		//1050 and 350 to start smooth scrolling before drone hits boundary
-		layer_x -= name1.get_x_dot()*df;					//***add depth factor***
+	if (name1.get_x() >= 1050) {		//1050 and 250 to start smooth scrolling before drone hits boundary
+		if (layer_x > max_neg_x) {
+			last_x = layer_x;
+			layer_x -= name1.get_x_dot() * df;					
+		} 
+		else if (layer_x <= max_neg_x) {
+			cout << "\n\n\t YOU CANNOT GO ANY FURTHER";
+		}
 	}
-	else if (name1.get_x() <= 350) layer_x -= name1.get_x_dot() * df;
+	else if (name1.get_x() <= 250) {
+		if (layer_x < max_pos_x) {
+			last_x = layer_x;
+			layer_x -= name1.get_x_dot() * df;
+		} 
+		else if (layer_x >= max_pos_x) {
+			cout << "\n\n\t YOU CANNOT GO ANY FURTHER";
+		}
+	}
 
-	if (name1.get_y() >= 500) {		//1050 and 350 to start smooth scrolling before drone hits boundary
-		name1.get_y() = 500;
-		layer_y -= name1.get_y_dot()*df;				//***add depth factor***
+	if (name1.get_y() >= 500) {		//500 and 250 to start smooth scrolling before drone hits boundary
+		//name1.get_y() = 500;
+		if (layer_y > max_neg_y) {
+			last_y = layer_y;
+			layer_y -= name1.get_y_dot() * df;				
+		} 
+		else if (layer_y <= max_neg_y) {
+			cout << "\n\n\t YOU CANNOT GO ANY FURTHER";
+		}
 	}
-	else if (name1.get_y() <= 250)
-	{
-		name1.get_y() = 250;
-		layer_y -= name1.get_y_dot() * df;
+	else if (name1.get_y() <= 250) {
+		//name1.get_y() = 250;
+		if (layer_y < max_pos_y) {
+			last_y = layer_y;
+			layer_y -= name1.get_y_dot() * df;
+		} 
+		else if (layer_y >= max_pos_y) {
+			cout << "\n\n\t YOU CANNOT GO ANY FURTHER";
+		}
 	}
 	draw_sprite(id_layer, layer_x, layer_y, 0, layer_scale);
 }
@@ -747,6 +792,28 @@ double map::get_layerX() {
 
 double map::get_layerY() {
 	return layer_y;
+}
+
+double map::get_lastX() {
+	return last_x;
+}
+
+double map::get_lastY() {
+	return last_y;
+}
+
+double map::get_max_pos_x() {
+	return max_pos_x;
+}
+
+double map::get_max_neg_x() {
+	return max_neg_x;
+}
+double map::get_max_pos_y() {
+	return max_pos_y;
+}
+double map::get_max_neg_y() {
+	return max_neg_y;
 }
 
 class Animation
@@ -855,7 +922,7 @@ public:
 	double& get_y() { return coin_y; };			//access function necessary when mapping coins from a text file
 	bool& get_state() { return coin_state; };
 	int& get_collected_coins() { return collected_coins; };
-	void Coin::draw_coin(Drone& name1, Animation& coin_animations);	 //this is called to draw each coin object, using layer 4 relative displacement and coin animation
+	void Coin::draw_coin(Drone& name1, map& layer, Animation& coin_animations);	 //this is called to draw each coin object, using layer 4 relative displacement and coin animation
 };
 
 Coin::Coin() {
@@ -872,9 +939,11 @@ Coin::Coin() {
 	*/
 }
 
-void Coin::draw_coin(Drone& name1, Animation& coin_animations) {
+void Coin::draw_coin(Drone& name1, map& layer, Animation& coin_animations) {
 
-	//Coin position changes with map/drone movement:
+	/* 
+		OUTDATED: Coins will now use the layer class to track their position
+
 	if (name1.get_x() >= 1050) {		//1050 and 350 to start smooth scrolling before drone hits boundary
 		coin_x -= name1.get_x_dot() * 0.65;					//***add depth factor***
 	}
@@ -889,6 +958,31 @@ void Coin::draw_coin(Drone& name1, Animation& coin_animations) {
 		name1.get_y() = 250;
 		coin_y -= name1.get_y_dot() * 0.65;
 	}
+	*/
+
+	//IF LAYER4 MOVES, COIN OBJECTS MOVE A THE SAME PIXEL RATE ACCORDINGLY
+	if (name1.get_x() >= 1050) {		
+		if (layer.get_layerX() > layer.get_max_neg_x()) {
+			coin_x += (layer.get_layerX() - layer.get_lastX());
+		}
+	}
+	else if (name1.get_x() <= 250) {
+		if (layer.get_layerX() < layer.get_max_pos_x()) {
+			coin_x += (layer.get_layerX() - layer.get_lastX());
+		}
+	}
+
+	if (name1.get_y() >= 500) {		
+		if (layer.get_layerY() > layer.get_max_neg_y()) {
+			coin_y += (layer.get_layerY() - layer.get_lastY());
+		}
+	}
+	else if (name1.get_y() <= 250)
+	{
+		if (layer.get_layerY() < layer.get_max_pos_y()) {
+			coin_y += (layer.get_layerY() - layer.get_lastY());
+		}
+	}
 
 	// Drawing coin object 
 	if (coin_state == 1) {                                //trigger animation located at the coin
@@ -896,7 +990,8 @@ void Coin::draw_coin(Drone& name1, Animation& coin_animations) {
 		coin_animations.animate();
 	}
 
-	/*   This method is outdated, will now use Animation class to animate the coin:
+	/*   
+		OUTDATED: coins will now use Animation class to animate the coin
 	
 	if (coin_rotating >= 2.0 && coin_rotating < 3.0 && coin_state == 1) {
 		draw_sprite(id_coin1, coin_x, coin_y, 0, 1);
@@ -1009,8 +1104,8 @@ int main()
 	Box D1_Area(0, 0, 120, 40, 1.0, 1.0, 1.0);
 
 	//Initializing of Layers
-	map Layer1("Layer1.png", 0.5, 700.0, 500, 1.8);		//Creating Layer1 object of the map class, attaching the appropriate image and depth factor (df)
-	map Layer4("Layer4.png", 0.6, 700.0, 100, 1.65);	//arguments: (image file, its speed relative to other layers (df), x and y position in window relative to other layers, image scaling)
+	map Layer1("Layer1.png", 0.5, 700.0, 600, 3.5, 2100, -645, 1416, -115);		//Creating Layer1 object of the map class, (char layer pic, depth factor, double layerX, double layerY, double scale, double _layer_offset, double _max_pos_x, double _max_neg_x
+	map Layer4("Layer4.png", 0.6, 700.0, 100, 3.15, 2400, -900, 1199, -645);	//arguments: (image file, its speed relative to other layers (df), x and y position in window relative to other layers, image scaling)
 
 	Box Rigid[5];
 	Box HP_zone1(0, 0, 200, 200, 0.0, 0.5, 0.0);
@@ -1098,7 +1193,7 @@ int main()
 			
 			//Drawing of coins
 			for (int i = 0; i < nb_coins; i++) {
-				coins[i].draw_coin(D1, coin_animation);			//Added Animation class to animate coin
+				coins[i].draw_coin(D1, Layer4, coin_animation);			//Added Animation class to animate coin
 			}
 
 			D1_Area.reset(D1.get_x(), D1.get_y(), 120, 40, 1.0, 1.0, 1.0);
