@@ -131,6 +131,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="program.cpp" />
+    <ClCompile Include="ran.cpp" />
+    <ClCompile Include="ran2.cpp" />
+    <ClCompile Include="ran3.cpp" />
     <ClCompile Include="timer.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -140,6 +143,7 @@
   <ItemGroup>
     <ClInclude Include="2D_graphics.h" />
     <ClInclude Include="game_pad.h" />
+    <ClInclude Include="ran.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

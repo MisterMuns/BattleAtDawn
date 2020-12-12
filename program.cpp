@@ -11,18 +11,18 @@
 
 #include "game_pad.h"
 
-using namespace std;
-
 #include "timer.h" // use the time / clock reading function
 
 #include <MMSystem.h>
 
-
+#include "ran.h"
 
 #pragma comment(lib,"winmm.lib") // links a windows library
 
+using namespace std;
 
 const double gravity = 9.81;
+
 
 class Drone
 {
@@ -81,11 +81,11 @@ Drone::Drone(double _x, double _y, double _theta)
 	in_roll = 0.0;
 	hp = 100;							//Drone starts at full health (100 health points = 100 pixels)
 	aim_angle = 0;
-	acceleration = 4;
+	//acceleration = 9.8;				//Forget about it
 	
 
 	index = 1;
-	create_sprite("FrontView.png", id_drone);
+	create_sprite("Images/FrontView.png", id_drone);
 	power_count = 0;
 
 }
@@ -106,11 +106,11 @@ void Drone::reset(double _x, double _y, double _theta)
 	in_roll = 0.0;
 	hp = 100;							//Drone starts at full health (100 health points = 100 pixels)
 	aim_angle = 0;
-	acceleration = 4;
+	//acceleration = 9.8;				//Forget about it
 	GS[9] = 0;
 
 	index = 1;
-	create_sprite("FrontView.png", id_drone);
+	create_sprite("Images/FrontView.png", id_drone);
 	power_count = 0;
 }
 
@@ -130,7 +130,11 @@ void Drone::reset2(double _x, double _y, double _theta)
 	in_roll = 0.0;
 	hp = 100;							//Drone starts at full health (100 health points = 100 pixels)
 	aim_angle = 0;
-	acceleration = 4;
+	ifstream fin;
+	fin.open("acceleration.txt");
+	fin >> acceleration;
+	fin.close();
+	//acceleration = 9.8;
 	GS[9] = 0;
 
 	index = 1;
@@ -373,18 +377,42 @@ public:
 	Enemy() { ; }
 	Enemy(double _x, double _y, double _theta) : Drone(_x, _y, _theta) {}
 	void inputs(double player_x, double player_y);
+	void reset(double _x, double _y, double _theta);
 	void stability();
 	void calculate();
 	void map_rel(Drone name1);
 	double get_aim(Drone player);
 	double get_radius() { return radius; }
-	void check_health();
+	void check_health(int &kill_counter);
 	void reset_killcount();
 	int get_killcount();
 	~Enemy() { ; }
 
 };
 
+void Enemy::reset(double _x, double _y, double _theta)
+{
+	mass = 5.0;
+	x = _x;
+	x_dot = 0.0;
+	x_dotdot = 0.0;
+	y = _y;
+	y_dot = 0.0;
+	y_dotdot = 0.0;
+	theta = _theta;
+	in_thrust = 49.25;
+	out_thrust = 0.0;
+	delta_time = 0.1;
+	in_roll = 0.0;
+	hp = 100;							//Drone starts at full health (100 health points = 100 pixels)
+	aim_angle = 0;
+	//acceleration = 9.8;				//Forget about it
+	GS[9] = 0;
+
+	index = 1;
+	create_sprite("Images/FrontView_E.png", id_drone);
+	power_count = 0;
+}
 
 void Enemy::inputs(double player_x, double player_y)
 {
@@ -444,7 +472,7 @@ void Enemy::calculate()
 	y_dot = y_dot + y_dotdot * delta_time;
 	y = y + y_dot;
 
-	x_dotdot = -10 * gravity * sin(theta);
+	x_dotdot = -acceleration*5 * gravity * sin(theta);
 	x_dot = x_dot + x_dotdot * delta_time;
 	x = x + x_dot;
 }
@@ -483,7 +511,7 @@ void Enemy::map_rel(Drone name1)
 
 }
 
-void Enemy::check_health()
+void Enemy::check_health(int &kill_counter)
 {
 	if (hp <= 0)
 	{
@@ -491,6 +519,7 @@ void Enemy::check_health()
 		y = 100000;
 		hp = 100;
 		enemy_killcount++;
+		kill_counter--;
 	}
 	//cout << enemy_killcount << endl;
 }
@@ -631,9 +660,9 @@ Bullet::Bullet()
 	x = 0;
 	y = 0;
 	theta = 0;
-	create_sprite("Bullet.png", id_bullet);
+	create_sprite("Images/Bullet.png", id_bullet);
 	state = 0;
-	speed = 4;
+	speed = 8;
 	duration = 0;
 }
 
@@ -770,7 +799,7 @@ void map::draw_layer(Drone& name1) {
 			layer_y -= name1.get_y_dot() * df;				
 		} 
 		else if (layer_y <= max_neg_y) {
-			cout << "\n\n\t YOU CANNOT GO ANY FURTHER";
+			cout << "\n\n\t YOU CANNOT GO ANY FURTHER";;
 		}
 	}
 	else if (name1.get_y() <= 250) {
@@ -1080,8 +1109,9 @@ void Health_Bar(Enemy enemy, Box black, Box green);
 void getting_shot(Drone &Enemy_Drone, Box Enemy_Area, Bullet &bullet, Animation &explosion, Sound sound);
 void scoreboard(char scoreboard_file[], char _player_name[], Enemy enemy_array[], Coin coin_array[], char _first[], char _second[], char _third[], double& _firstpnts,
 double& _secondpnts, double& _thirdpnts, bool& scoreboard_trigger);
-void Spawn(Enemy E_Array[]);
-const int nb_enemy = 3;
+void Spawn(Enemy E_Array[], int &wave, long int rand_s, int &kill_counter);
+
+const int nb_enemy = 10;
 const int nb_coins = 10;
 const int enemy_bullet_limit = 3;
 const int player_bullet_limit = 3;
@@ -1104,10 +1134,10 @@ int main()
 	Box D1_Area(0, 0, 120, 40, 1.0, 1.0, 1.0);
 
 	//Initializing of Layers
-	map Layer1("Layer1.png", 0.5, 700.0, 600, 3.5, 2100, -645, 1416, -115);		//Creating Layer1 object of the map class, (char layer pic, depth factor, double layerX, double layerY, double scale, double _layer_offset, double _max_pos_x, double _max_neg_x
-	map Layer4("Layer4.png", 0.6, 700.0, 100, 3.15, 2400, -900, 1199, -645);	//arguments: (image file, its speed relative to other layers (df), x and y position in window relative to other layers, image scaling)
+	map Layer1("Images/Layer1.png", 0.5, 700.0, 450, 3.6, 2100, -645, 1416, -115);		//Creating Layer1 object of the map class, (char layer pic, depth factor, double layerX, double layerY, double scale, double _layer_offset, double _max_pos_x, double _max_neg_x
+	map Layer4("Images/Layer5.png", 0.6, 700.0, 100, 1.75, 2400, -900, 1199, -645);	//arguments: (image file, its speed relative to other layers (df), x and y position in window relative to other layers, image scaling)
 
-	Box Rigid[5];
+	Box Rigid[2];	//Sky and Grown collision box
 	Box HP_zone1(0, 0, 200, 200, 0.0, 0.5, 0.0);
 	Bullet bullet[10];
 	Bullet bullet_enemy[enemy_bullet_limit];
@@ -1128,39 +1158,47 @@ int main()
 	Animation collision_animation("Animation/Collision/animation_sequence.txt", 1, 1);
 	Animation coin_animation("Animation/Coins/animation_sequence.txt", 100, 0.2);				//coin png scaled down to 0.2
 
-	Sound boom("boom.wav");
-	Sound laser("laser.wav");
-	Sound collision_sound("collision.wav");
+	Sound boom("Sounds/boom.wav");
+	Sound laser("Sounds/laser.wav");
+	Sound collision_sound("Sounds/collision.wav");
+
+	long int rand_s = 22;
 
 	D1.reset(400, 300, 0);
 	for (int i = 0; i < nb_enemy; i++)
 	{
-		E_Array[i].reset(1000 + 50 * i, 300 + 60 * i, 0);
+		E_Array[i].reset(100000000000000 + 50 * i, 300 + 60 * i, 0);
 	}
 
 	int id_laser;
-	create_sprite("Laser.png", id_laser);
+	create_sprite("Images/Laser.png", id_laser);
 
 	bool scoreboard_trigger;						//After restart, reset trigger to 1 so scoreboard will update for next game loop
 	int shoot_delay;
 	int shoot_delay_enemy[nb_enemy];
+	int wave;
+	int kill_counter;
 
 	int i_enemy = 0;
 
 		for (;;)		//***_RESTART LOOP_***
 		{
 			scoreboard_trigger = 1;
+			wave = 1;
+			kill_counter = 1;
 
 			E_Array[0].reset_killcount();
 
 			D1.reset2(400, 300, 0);
 			for (int i = 0; i < nb_enemy; i++)
 			{
-				E_Array[i].reset2(1000 + 50 * i, 300 + 60 * i, 0);
+				E_Array[i].reset2(10000000000 + 50 * i, 300 + 60 * i, 0);
 			}
 
+			E_Array[0].reset2(300, 300, 0);
+
 			for (int i = 0; i < player_bullet_limit; i++)
-			{
+			{ 
 				bullet[i].get_state() = 0;
 				shoot_delay = 0;
 			}
@@ -1185,12 +1223,14 @@ int main()
 
 		for (;;)		//***_GAME LOOP_***
 		{
-			//Spawn(E_Array);
+			
 			clear();
 			//Drawing of Layers
 			Layer1.draw_layer(D1);				//Updating background according to D1 positioning, absolute background so goes first
 			Layer4.draw_layer(D1);
 			
+			Spawn(E_Array, wave, rand_s, kill_counter);
+
 			//Drawing of coins
 			for (int i = 0; i < nb_coins; i++) {
 				coins[i].draw_coin(D1, Layer4, coin_animation);			//Added Animation class to animate coin
@@ -1228,10 +1268,12 @@ int main()
 			
 			
 
-			for (int i = 0; i < 1; i++)
+			Rigid[0].reset((Layer4.get_layerX() - 0), Layer4.get_layerY() + 1100 , 5000, 60, 0.0, 0.0, 0.0);  //-500 in x position relative to Layer4
+			Rigid[1].reset((Layer4.get_layerX() - 0), Layer4.get_layerY() - 1000, 5000, 60, 0.0, 0.0, 0.0);  //-500 in x position relative to Layer4
+
+			for (int i = 0; i < 2; i++)
 			{
-				Rigid[i].reset((Layer4.get_layerX() - 500), Layer4.get_layerY()-300, 300, 20, 0.0, 0.0, 0.0);  //-500 in x position relative to Layer4
-				Rigid[i].draw();
+				//Rigid[i].draw();
 				collision(D1, D1_Area, Rigid[i], collision_animation, collision_sound);
 			}
 
@@ -1330,7 +1372,7 @@ int main()
 			restore_hp(D1, HP_zone1);			//Function setting up Box object 'HP_zone1' as a healing area
 			D1.draw();
 			draw_sprite(id_laser, D1.get_x(), D1.get_y(), D1.get_aim() + D1.get_theta(), 1.0);
-
+			//cout << D1.get_x() << "      " << D1.get_y() << endl;
 			grab_coin(D1_Area, coins, nb_coins);
 
 			/*
@@ -1349,7 +1391,7 @@ int main()
 				E_Array[i].calculate();
 				E_Array[i].stability();
 				E_Array[i].draw();
-				E_Array[i].check_health();
+				E_Array[i].check_health(kill_counter);
 				//E_Area[i].draw();
 			}
 
@@ -1360,6 +1402,8 @@ int main()
 			text(coins[0].get_collected_coins(), 190, 680, 0.5);
 			text("Total Score:  ", 10, 650, 0.5);
 			text(((coins[0].get_collected_coins())*20.0)+((E_Array[0].get_killcount())*100.0), 150, 650, 0.5);
+			text("Wave: ", 10, 620, 0.5);
+			text(wave, 90, 620, 0.5);
 
 			if (D1.get_hp() == 0) {											//Status check, restart drone simulation if HP = 0
 
@@ -1680,17 +1724,30 @@ void scoreboard(char scoreboard_file[], char _player_name[], Enemy enemy_array[]
 	scoreboard_trigger = 0;
 }
 
-void Spawn(Enemy E_Array[])
+void Spawn(Enemy E_Array[], int& wave, long int rand_s, int &kill_counter)
 {
-	int v1 = rand() % 100;
-	for (int i = 0; i < 3; i++)
-	{
-		E_Array[i].reset2(0, 0, 0);
-	}
-}
+	int random = 0;
+	
 
-//spawn.randomize();
-//for(int i=0;i<spawn_limit;i++)
-//E_Array[0].reset2(spawn.get_x(), spawn.get_y(),0);
-//if enemy_remaining = 0, spawn_limit + 1;
-//spawn(E_Array[0], reset2, spawn_limit)
+
+	if (kill_counter == 0)
+	{
+		wave++;
+		kill_counter = wave;
+
+		for (int i = 0; i < wave; i++)
+		{
+			random = 2000 * ((ran(rand_s) - 0.5) / 0.5) + 1000;
+
+			while (random > 200 && random < 1100)
+			{
+				random = 2000 * ((ran(rand_s) - 0.5) / 0.5) + 1000;
+			}
+
+			E_Array[i].reset2(random, random , 0);
+			//E_Array[i].reset2(0, 0, 0);
+		}
+		
+	}
+	
+}
