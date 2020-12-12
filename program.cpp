@@ -62,6 +62,7 @@ public:
 	double get_aim();
 	bool get_gamepad_shoot();
 	void draw();
+	void get_damage();
 	~Drone() { ; }
 };
 
@@ -349,20 +350,21 @@ void Drone::bounce()
 		x = x + offset;
 
 	}
+}
 
+void Drone::draw()
+{
+	draw_sprite(id_drone, x, y, theta, 0.45);
+}
+
+void Drone::get_damage()
+{
 	if (hp >= 5) {
 		hp -= 20;			   //Drone health (100 pixels) - take 20 damage when bounch occurs
 	}
 	else {
 		hp = 0;
 	}
-	
-
-}
-
-void Drone::draw()
-{
-	draw_sprite(id_drone, x, y, theta, 0.45);
 }
 
 class Enemy :public Drone
@@ -1491,6 +1493,7 @@ void getting_shot(Drone &Enemy_Drone,Box Enemy_Area,Bullet &bullet, Animation &e
 		bullet.get_state() = 0;
 		bullet.set_initial(0, 0, 0);
 		Enemy_Drone.bounce();
+		Enemy_Drone.get_damage();
 		sound.play();
 		
 	}
