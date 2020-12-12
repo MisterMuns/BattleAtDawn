@@ -1117,6 +1117,7 @@ void getting_shot(Drone &Enemy_Drone, Box Enemy_Area, Bullet &bullet, Animation 
 void scoreboard(char scoreboard_file[], char _player_name[], Enemy enemy_array[], Coin coin_array[], char _first[], char _second[], char _third[], double& _firstpnts,
 double& _secondpnts, double& _thirdpnts, bool& scoreboard_trigger);
 void Spawn(Enemy E_Array[], int &wave, long int rand_s, int &kill_counter);
+void detect_controller(bool &controller_state);
 
 const int nb_enemy = 10;
 const int nb_coins = 10;
@@ -1179,6 +1180,9 @@ int main()
 
 	int id_laser;
 	create_sprite("Images/Laser.png", id_laser);
+
+	bool controller_state;
+	detect_controller(controller_state);
 
 	bool scoreboard_trigger;						//After restart, reset trigger to 1 so scoreboard will update for next game loop
 	int shoot_delay;
@@ -1385,13 +1389,15 @@ int main()
 			//cout << D1.get_x() << "      " << D1.get_y() << endl;
 			grab_coin(D1_Area, coins, nb_coins);
 
-			/*
-			D1.controller();
-			if (D1.get_gamepad_shoot() == 1)
+			
+			if (controller_state == 1)
 			{
-				shoot_delay++;
+				D1.controller();
+				if (D1.get_gamepad_shoot() == 1)
+				{
+					shoot_delay++;
+				}
 			}
-			*/
 			
 			//Enemy Class
 			for (int i = 0; i < wave; i++)
@@ -1761,4 +1767,24 @@ void Spawn(Enemy E_Array[], int& wave, long int rand_s, int &kill_counter)
 		
 	}
 	
+}
+
+void detect_controller(bool &controller_state)
+{
+	ifstream fin;
+	fin.open("controller.txt");
+	char temp;
+
+	fin >> temp;
+
+	if (temp == 'Y')
+	{
+		controller_state = 1;
+	}
+	else if (temp == 'n')
+	{
+		controller_state = 0;
+	}
+
+	fin.close();
 }
