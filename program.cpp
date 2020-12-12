@@ -552,6 +552,7 @@ public:
 	double get_right() { return x_re[1]; }
 	double get_top() { return y_re[2]; }
 	double get_bottom() { return y_re[0]; }
+	~Box() { ; }
 };
 
 Box::Box()
@@ -746,6 +747,7 @@ public:
 	double get_max_pos_y();
 	double get_max_neg_x();
 	double get_max_neg_y();
+	~map() { ; }
 };
 
 map::map(char layer_file_name[], double depth_factor, double layerX, double layerY, double scale, double _max_pos_x, double _max_neg_x, double _max_pos_y, double _max_neg_y) {		//takes the file name for this object, to create sprite
@@ -862,6 +864,7 @@ public:
 	void trigger(double _x, double _y);
 	void animate();
 	bool& return_trig() { return trigger_state; }
+	~Animation() { ; }
 };
 
 Animation::Animation(char file_seq[], double _duration, double _scale)
@@ -952,6 +955,7 @@ public:
 	bool& get_state() { return coin_state; };
 	int& get_collected_coins() { return collected_coins; };
 	void Coin::draw_coin(Drone& name1, map& layer, Animation& coin_animations);	 //this is called to draw each coin object, using layer 4 relative displacement and coin animation
+	~Coin() { ; }
 };
 
 Coin::Coin() {
@@ -1056,6 +1060,7 @@ private:
 public:
 	Sound(char file_name[]);
 	void play();
+	~Sound() { ; }
 };
 
 Sound::Sound(char file_name[])
@@ -1195,7 +1200,7 @@ int main()
 				E_Array[i].reset2(10000000000 + 50 * i, 300 + 60 * i, 0);
 			}
 
-			E_Array[0].reset2(300, 300, 0);
+			E_Array[0].reset2(900, 300, 0);
 
 			for (int i = 0; i < player_bullet_limit; i++)
 			{ 
@@ -1295,7 +1300,8 @@ int main()
 				}
 			}
 
-
+			if (wave != 1)
+			{
 				for (int j = 0; j < enemy_bullet_limit; j++)
 				{
 
@@ -1313,9 +1319,11 @@ int main()
 						laser.play();
 					}
 				}
-			
-				if (i_enemy == nb_enemy) i_enemy = 0;
+			}
+				
 				i_enemy++;
+				if (i_enemy == wave) i_enemy = 0;
+				
 
 			
 			for (int i = 0; i < nb_enemy; i++)
@@ -1384,7 +1392,7 @@ int main()
 			*/
 			
 			//Enemy Class
-			for (int i = 0; i < nb_enemy; i++)
+			for (int i = 0; i < wave; i++)
 			{
 				E_Array[i].set_delta_time();
 				E_Array[i].inputs(D1.get_x(), D1.get_y());
