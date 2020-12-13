@@ -783,7 +783,7 @@ void map::draw_layer(Drone& name1) {
 			layer_x -= name1.get_x_dot() * df;					
 		} 
 		else if (layer_x <= max_neg_x) {
-			cout << "\n\n\t YOU CANNOT GO ANY FURTHER";
+			//cout << "\n\n\t YOU CANNOT GO ANY FURTHER";   spams command window
 		}
 	}
 	else if (name1.get_x() <= 250) {
@@ -792,7 +792,7 @@ void map::draw_layer(Drone& name1) {
 			layer_x -= name1.get_x_dot() * df;
 		} 
 		else if (layer_x >= max_pos_x) {
-			cout << "\n\n\t YOU CANNOT GO ANY FURTHER";
+			//cout << "\n\n\t YOU CANNOT GO ANY FURTHER";    spams command window
 		}
 	}
 
@@ -941,6 +941,7 @@ class Coin {
 	double coin_y;			
 	bool coin_state;					//when state == 0, coin disappears, coin returns to state == 1 after time passes
 	static int collected_coins;			//static variable shared among all objects, they will all increment this value when they are grabbed! (grab_coin function being called)
+	double respawn_timer;
 
 	/*  No longer apart of the coin class:
 	int id_coin1;
@@ -956,15 +957,22 @@ public:
 	double& get_y() { return coin_y; };			//access function necessary when mapping coins from a text file
 	bool& get_state() { return coin_state; };
 	int& get_collected_coins() { return collected_coins; };
+	double& get_respawn_timer() { return respawn_timer; };
 	void Coin::draw_coin(Drone& name1, map& layer, Animation& coin_animations);	 //this is called to draw each coin object, using layer 4 relative displacement and coin animation
-	~Coin() { ; }
+	Box* hitbox;								//Each coin will have an area hitbox
+	~Coin();
 };
 
 Coin::Coin() {
 	coin_x = 0.0;
 	coin_y = 0.0;
 	coin_state = 1;
+	respawn_timer = 0.0;
 
+	hitbox = new Box(coin_x, coin_y, 50, 50, 1, 1, 1);		//single dynamic box object for the coin object
+	if (hitbox == NULL) {
+		cout << "\nallocation error of coin hitbox in coin::coin() constructor";
+	}
 	/*   No longer apart of the coin class:
 	create_sprite("pirate_coin1.png", id_coin1);
 	create_sprite("pirate_coin2.png", id_coin2);
@@ -1051,6 +1059,12 @@ void Coin::draw_coin(Drone& name1, map& layer, Animation& coin_animations) {
 
 }
 
+Coin::~Coin() {
+	if (hitbox != NULL) {
+		delete hitbox;
+		hitbox == NULL;
+	}
+}
 
 class Sound
 {
@@ -1101,7 +1115,8 @@ void Sound::play()
 }
 
 void map_coins(char coin_locations[], Coin coin_array[], int nb_coins);
-void grab_coin(Box& Drone_Area, Coin coin_array[], int nb_coins);
+void grab_coin(Box& Drone_Area, Coin coin_array[], int nb_coins, Sound _coin_sound);
+void respawn_coin(Coin coin_array[], int nb_coins);
 void reset_state(Coin coin_array[], int nb_coins);
 
 //when coins get picked up, they disappear momentarily. a seperate function called "collecting coins", state goes to 0 when its touched?
@@ -1120,7 +1135,7 @@ void Spawn(Enemy E_Array[], int &wave, long int rand_s, int &kill_counter);
 void detect_controller(bool &controller_state);
 
 const int nb_enemy = 10;
-const int nb_coins = 10;
+const int nb_coins = 25;
 const int enemy_bullet_limit = 3;
 const int player_bullet_limit = 3;
 int Enemy::enemy_killcount = 0;
@@ -1164,11 +1179,12 @@ int main()
 
 	Animation explosion("Animation/Explosion/animation_sequence.txt", 1, 1);
 	Animation collision_animation("Animation/Collision/animation_sequence.txt", 1, 1);
-	Animation coin_animation("Animation/Coins/animation_sequence.txt", 100, 0.2);				//coin png scaled down to 0.2
+	Animation coin_animation("Animation/Coins/animation_sequence.txt", 200, 0.2);				//coin png scaled down to 0.2
 
 	Sound boom("Sounds/boom.wav");
 	Sound laser("Sounds/laser.wav");
 	Sound collision_sound("Sounds/collision.wav");
+	Sound coin_sound("Sounds/coin.wav");
 
 	long int rand_s = 22;
 
@@ -1245,6 +1261,7 @@ int main()
 			//Drawing of coins
 			for (int i = 0; i < nb_coins; i++) {
 				coins[i].draw_coin(D1, Layer4, coin_animation);			//Added Animation class to animate coin
+				coins[i].hitbox->reset(coins[i].get_x(), coins[i].get_y(), 50, 50, 1.0, 1.0, 1.0);
 			}
 
 			D1_Area.reset(D1.get_x(), D1.get_y(), 120, 40, 1.0, 1.0, 1.0);
@@ -1387,8 +1404,9 @@ int main()
 			D1.draw();
 			draw_sprite(id_laser, D1.get_x(), D1.get_y(), D1.get_aim() + D1.get_theta(), 1.0);
 			//cout << D1.get_x() << "      " << D1.get_y() << endl;
-			grab_coin(D1_Area, coins, nb_coins);
 
+			grab_coin(D1_Area, coins, nb_coins, coin_sound);			//grab coin if drone hits a coin hitbox
+			respawn_coin(coins, nb_coins);								//respawn a coin, respawn timer increments by 0.1, respawns at respawn_timer = 100
 			
 			if (controller_state == 1)
 			{
@@ -1543,22 +1561,39 @@ void map_coins(char coin_locations[], Coin coin_array[], int nb_coins) {      //
 		coin_array[i].get_x() = x_value;
 		fin >> y_value;
 		coin_array[i].get_y() = y_value;
+
+		coin_array[i].hitbox->reset(coin_array[i].get_x(), coin_array[i].get_y(), 50, 50, 1.0, 1.0, 1.0); //Re-initialize the hitbox to each coin, they will adjust in position with the coins in main
 	}
 
 	fin.close();
 
 }
 
-void grab_coin(Box& Drone_Area, Coin coin_array[], int nb_coins) {		//when a coin object gets grabbed, change state from 1 to 0, make collected coins counter go up(and make it respawn?)
-
+void grab_coin(Box& Drone_Area, Coin coin_array[], int nb_coins, Sound _coin_sound) {		//when a coin object gets grabbed, change state from 1 to 0, make collected coins counter go up(and make it respawn?)
 
 	for (int i = 0; i < nb_coins; i++) {
-		if (coin_array[i].get_state() == 1 && coin_array[i].get_x() < Drone_Area.get_right() && coin_array[i].get_x() > Drone_Area.get_left() && coin_array[i].get_y() < Drone_Area.get_top() && coin_array[i].get_y() > Drone_Area.get_bottom())
+		if (coin_array[i].get_state() == 1 && coin_array[i].hitbox->get_left() < Drone_Area.get_right() && coin_array[i].hitbox->get_right() > Drone_Area.get_left() && coin_array[i].hitbox->get_bottom() < Drone_Area.get_top() && coin_array[i].hitbox->get_top() > Drone_Area.get_bottom())
 		{
-			//coin_array[i].get_state() == 1 means the coin has previously not been grabbed already
-			coin_array[i].get_state() = 0;
+			coin_array[i].get_state() = 0;					//coin_array[i].get_state() == 1 means the coin has previously not been grabbed already
 			coin_array[i].get_collected_coins() += 1;
+			_coin_sound.play();
+
 			cout << "\n\tYou have collected: " << coin_array[i].get_collected_coins() << " so far!";
+		}
+	}
+}
+
+void respawn_coin(Coin coin_array[], int nb_coins) {
+
+	for (int i = 0; i < nb_coins; i++) {
+		if (coin_array[i].get_state() == 0) {							//if coin object state is 0 (it is despawned), increment respawn timer
+			coin_array[i].get_respawn_timer() = coin_array[i].get_respawn_timer() + 0.1;
+			//cout << "\nrespawn timer is = " << coin_array[i].get_respawn_timer();    Checks time progress
+
+			if (coin_array[i].get_respawn_timer() >= 100.0) {				//once sufficient time has passed based on respawn time, set state back to 1 and reset respawn timer
+				coin_array[i].get_state() = 1;
+				coin_array[i].get_respawn_timer() = 0.0;
+			}
 		}
 	}
 }
