@@ -1100,24 +1100,37 @@ void Sound::play()
 	PlaySoundA(p_buffer, NULL, SND_MEMORY | SND_ASYNC);
 }
 
-void map_coins(char coin_locations[], Coin coin_array[], int nb_coins);
-void grab_coin(Box& Drone_Area, Coin coin_array[], int nb_coins);
-void reset_state(Coin coin_array[], int nb_coins);
-
-//when coins get picked up, they disappear momentarily. a seperate function called "collecting coins", state goes to 0 when its touched?
 
 
-//coin_grabbed function to change state of coin
 
 
-void restore_hp(Drone& name1, Box name2);
-void collision(Drone &A, Box Drone, Box Rigid, Animation &_animation, Sound _sound);
-void Health_Bar(Enemy enemy, Box black, Box green);
-void getting_shot(Drone &Enemy_Drone, Box Enemy_Area, Bullet &bullet, Animation &explosion, Sound sound);
-void scoreboard(char scoreboard_file[], char _player_name[], Enemy enemy_array[], Coin coin_array[], char _first[], char _second[], char _third[], double& _firstpnts,
-double& _secondpnts, double& _thirdpnts, bool& scoreboard_trigger);
-void Spawn(Enemy E_Array[], int &wave, long int rand_s, int &kill_counter);
-void detect_controller(bool &controller_state);
+void map_coins(char coin_locations[], Coin coin_array[], int nb_coins);	//Map coins depending on coin_locations.txt
+
+void grab_coin(Box& Drone_Area, Coin coin_array[], int nb_coins);//coin_grabbed function to change state of coin
+
+void reset_state(Coin coin_array[], int nb_coins);				//If no more coins in the map, reset all coins
+
+void restore_hp(Drone& name1, Box name2);						//Restores HP if Drone is found within HP+ Box
+										
+void collision(Drone &A, Box Drone, Box Rigid,					//If any of the drone's area corner's found within Rigid box,
+	Animation &_animation, Sound _sound);						//call A.collision(), play animation, play sound
+																
+void Health_Bar(Enemy enemy, Box black, Box green);				//Connect health bar array boxes to enemy coordinate.
+																
+void getting_shot(Drone &Enemy_Drone, Box Enemy_Area,			//If bullet coordinate found within drone area boxes,
+	Bullet &bullet, Animation &explosion, Sound sound);			//cause collision(), reset bullet[i], animate explosion and play sound
+																
+void scoreboard(char scoreboard_file[], char _player_name[],	//Saves current score into text file called scoreboard.txt
+	Enemy enemy_array[], Coin coin_array[],						//Score is the sum of kill counts and coins collected.
+	char _first[], char _second[],								//Compares score with other ranks, and
+	char _third[], double& _firstpnts,							//Manipulates files appropriately.
+	double& _secondpnts, double& _thirdpnts,					//Scoreboard loop will break if 'R' is pressed.
+	bool& scoreboard_trigger);									//
+																
+void Spawn(Enemy E_Array[], int &wave,							//If kill_counter reaches the wave number, then kill_counter = 0
+	long int rand_s, int &kill_counter);						//and E_Array[i] position reset until E_Array[wave]
+																
+void detect_controller(bool &controller_state);					//To enable controller, char in controller.txt should be 'Y', else 'n'
 
 const int nb_enemy = 10;
 const int nb_coins = 10;
@@ -1377,7 +1390,7 @@ int main()
 			}
 			
 			
-
+			//D1_Area.draw();
 			D1.set_delta_time();
 			D1.inputs();
 			D1.calculate();
@@ -1402,13 +1415,13 @@ int main()
 			//Enemy Class
 			for (int i = 0; i < wave; i++)
 			{
+				//E_Area[i].draw();
 				E_Array[i].set_delta_time();
 				E_Array[i].inputs(D1.get_x(), D1.get_y());
 				E_Array[i].calculate();
 				E_Array[i].stability();
 				E_Array[i].draw();
 				E_Array[i].check_health(kill_counter);
-				//E_Area[i].draw();
 			}
 
 			//Update On-screen scores
@@ -1430,7 +1443,7 @@ int main()
 			//D1.environment();
 			//D1.elements();
 
-			//D1_Area.draw();
+			
 
 			if (KEY('T')) break;			//Restart if lost
 			update();

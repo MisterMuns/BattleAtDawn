@@ -1,34 +1,42 @@
 ﻿  program.cpp
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(901,6): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(902,6): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1074,15): warning C4244: '=': conversion from 'std::streamoff' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1146,37): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1146,21): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1147,79): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1147,64): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1147,24): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1170,36): warning C4244: 'argument': conversion from '__int64' to 'double', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1195,35): warning C4244: 'argument': conversion from '__int64' to 'double', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1239,38): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1239,26): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1243,57): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1243,37): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1247,57): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1247,36): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1256,41): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1256,25): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1259,83): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1259,68): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1259,28): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1271,66): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1271,40): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1272,66): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1272,40): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1506,44): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1506,25): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1509,92): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1509,74): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1509,28): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1740,48): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1744,49): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(906,6): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(907,6): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1081,15): warning C4244: '=': conversion from 'std::streamoff' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1167,37): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1167,21): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1168,79): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1168,64): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1168,24): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1191,36): warning C4244: 'argument': conversion from '__int64' to 'double', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1219,35): warning C4244: 'argument': conversion from '__int64' to 'double', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1263,38): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1263,26): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1267,57): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1267,37): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1271,57): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1271,36): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1280,41): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1280,25): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1283,83): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1283,68): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1283,28): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1295,66): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1295,40): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1296,66): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1296,40): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1536,44): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1536,25): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1539,92): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1539,74): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1539,28): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1770,48): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\program.cpp(1774,49): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+  ran.cpp
+  ran2.cpp
+  ran3.cpp
+  timer.cpp
+  Generating Code...
+program.obj : warning LNK4075: ignoring '/EDITANDCONTINUE' due to '/SAFESEH' specification
+2D_graphics_ver1.lib(2D_graphics.obj) : warning LNK4099: PDB 'program.pdb' was not found with '2D_graphics_ver1.lib(2D_graphics.obj)' or at 'C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\Debug\program.pdb'; linking object as if no debug info
+2D_graphics_ver1.lib(shared_memory.obj) : warning LNK4099: PDB 'program.pdb' was not found with '2D_graphics_ver1.lib(shared_memory.obj)' or at 'C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\Debug\program.pdb'; linking object as if no debug info
   program.vcxproj -> C:\Users\Muneeb\Documents\GitHub\BattleAtDawn\.\Debug\program.exe
