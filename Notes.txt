@@ -1,0 +1,5 @@
+If acceleration too fast or too slow, edit acceleration.txt inside the Settings folder
+
+If you'd like to play with a controller, type 'Y' inside controller.txt, if not, type 'n'. You also need to run DS4Windows.exe.
+
+Before starting BattleAtDawn.exe, start DirectX_window.exe.
