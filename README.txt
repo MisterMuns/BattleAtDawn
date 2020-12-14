@@ -4,3 +4,7 @@ If the player drone or enemy drones are moving too fast or too slow, edit accele
 If you'd like to play with a controller, type 'Y' inside controller.txt, if not, type 'n'. You need to run DS4Windows.exe first if you wish to use a controller.
 
 Before starting BattleAtDawn.exe, start DirectX_window.exe.
+
+In order for the shortcuts to work, the BattleAtDawn folder needs to be placed inside Program Files (x86), else you need to manually open DS4Windows, DirectX_window and program.exe to work.
+
+Enjoy!
