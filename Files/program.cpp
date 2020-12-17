@@ -64,6 +64,12 @@ int main()
 
 	Box Rigid[2];	//Sky and Grown collision box
 	Box HP_zone1(0, 0, 200, 200, 0.0, 0.5, 0.0);
+
+	int id_HPzone;
+	create_sprite("Images/HealthBoxImage.png", id_HPzone);
+	int id_scoreboard;
+	create_sprite("Images/scoreboard.png", id_scoreboard);
+
 	Bullet bullet[10];
 	Bullet bullet_enemy[enemy_bullet_limit];
 	Coin coins[nb_coins];						//coin class is added
@@ -158,6 +164,10 @@ int main()
 			Layer1.draw_layer(D1);				//Updating background according to D1 positioning, absolute background so goes first
 			Layer4.draw_layer(D1);
 
+			HP_zone1.reset(Layer4.get_layerX(), Layer4.get_layerY(), 200, 200, 0.0, 0.5, 0.0);					//Box object that will be a healing area
+			HP_zone1.draw();
+			draw_sprite(id_HPzone, Layer4.get_layerX(), Layer4.get_layerY(), 0, 0.234);
+
 			Spawn(E_Array, wave, rand_s, kill_counter);
 
 			//Drawing of coins
@@ -174,26 +184,9 @@ int main()
 			}
 
 
-			HP_zone1.reset(Layer4.get_layerX(), Layer4.get_layerY(), 200, 200, 0.0, 0.5, 0.0);					//Box object that will be a healing area
-			HP_zone1.draw();
-
 			for (int i = 0; i < nb_enemy; i++)
 			{
 				E_Array[i].map_rel(D1);
-			}
-
-
-			D1_HPb.reset(D1.get_x(), (D1.get_y() + 40), 106, 16, 0.0, 0.0, 0.0);	//Black outline of the HP bar
-			D1_HPb.draw();
-
-			D1_HPg.reset(D1.get_x() - ((100 - D1.get_hp()) / 2), D1.get_y() + 40, D1.get_hp(), 10, 0.0, 1.0, 0.0);	//This assumes HP is set at 100, not flexible
-			D1_HPg.draw();
-
-			//Health_Bar(D1, D2_HPb, D2_HPg);
-
-			for (int i = 0; i < nb_enemy; i++)
-			{
-				Health_Bar(E_Array[i], D2_HPb[i], D2_HPg[i]);
 			}
 
 
@@ -319,6 +312,12 @@ int main()
 				}
 			}
 
+			D1_HPb.reset(D1.get_x(), (D1.get_y() + 40), 106, 16, 0.0, 0.0, 0.0);	//Black outline of the HP bar
+			D1_HPb.draw();
+
+			D1_HPg.reset(D1.get_x() - ((100 - D1.get_hp()) / 2), D1.get_y() + 40, D1.get_hp(), 10, 0.0, 1.0, 0.0);	//This assumes HP is set at 100, not flexible
+			D1_HPg.draw();
+
 			//Enemy Class
 			for (int i = 0; i < wave; i++)
 			{
@@ -329,6 +328,12 @@ int main()
 				E_Array[i].draw();
 				E_Array[i].check_health(kill_counter);
 				//E_Area[i].draw();
+			}
+
+
+			for (int i = 0; i < nb_enemy; i++)
+			{
+				Health_Bar(E_Array[i], D2_HPb[i], D2_HPg[i]);
 			}
 
 			//Update On-screen scores
@@ -360,9 +365,10 @@ int main()
 		for (;;)
 		{
 			clear();
-			double text_x = 450, text_y = 640, text_scale = 1.0;
+			draw_sprite(id_scoreboard, 0, 0, 0, 0);
+			double text_x = 375, text_y = 640, text_scale = 1.0;
 			restart.reset(635, 355, 900, 680, 0.0, 0.0, 0.0);				//Backdrop for text
-			restart.draw();
+			//restart.draw();
 
 			/*File IO should never be in a loop, takes time, so scoreboard input then output occurs once, then use call by reference of arrays to output
 			names and points to the screen*/
