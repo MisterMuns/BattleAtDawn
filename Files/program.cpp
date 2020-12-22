@@ -31,7 +31,7 @@ void collision(Drone& A, Box Drone, Box Rigid, Animation& _animation, Sound _sou
 void Health_Bar(Enemy enemy, Box black, Box green);
 void getting_shot(Drone& Enemy_Drone, Box Enemy_Area, Bullet& bullet, Animation& explosion, Sound sound);
 void scoreboard(char scoreboard_file[], char _player_name[], Enemy enemy_array[], Coin coin_array[], char _first[], char _second[], char _third[], double& _firstpnts,
-	double& _secondpnts, double& _thirdpnts, bool& scoreboard_trigger);
+	double& _secondpnts, double& _thirdpnts, bool& scoreboard_trigger, Sound _victory_scoreboard, Sound _defeat_scoreboard);
 void Spawn(Enemy E_Array[], int& wave, long int rand_s, int& kill_counter);
 void detect_controller(bool& controller_state);
 
@@ -93,6 +93,9 @@ int main()
 	Sound laser("Sounds/laser.wav");
 	Sound collision_sound("Sounds/collision.wav");
 	Sound coin_sound("Sounds/coin.wav");
+	Sound start_sound("Sounds/starting.wav");
+	Sound victory_scoreboard("Sounds/Victory.wav");		//Victory sound when player achieves a high score
+	Sound defeat_scoreboard("Sounds/Defeat.wav");
 
 	long int rand_s = 22;
 
@@ -155,6 +158,9 @@ int main()
 		//Added map class reset function to replace constructor from loop
 		Layer1.reset(700.0, 500);
 		Layer4.reset(700.0, 100);
+
+		//SOUND TO START GAME
+		start_sound.play();
 
 		for (;;)		//***_GAME LOOP_***
 		{
@@ -373,7 +379,7 @@ int main()
 			/*File IO should never be in a loop, takes time, so scoreboard input then output occurs once, then use call by reference of arrays to output
 			names and points to the screen*/
 			if (scoreboard_trigger == 1) {
-				scoreboard("scoreboard.txt", player_name, E_Array, coins, firstplace, secondplace, thirdplace, firstpnts, secondpnts, thirdpnts, scoreboard_trigger);
+				scoreboard("scoreboard.txt", player_name, E_Array, coins, firstplace, secondplace, thirdplace, firstpnts, secondpnts, thirdpnts, scoreboard_trigger, victory_scoreboard, defeat_scoreboard);
 			}
 
 			//Displaying all scoreboard text
@@ -508,20 +514,18 @@ void respawn_coin(Coin coin_array[], int nb_coins) {
 
 void reset_state(Coin coin_array[], int nb_coins) {
 	for (int i = 0; i < nb_coins; i++) {
-		if (coin_array[i].get_state() == 0) {				//only if it's 0, revert it back to 1 and decrease collected_coins by 1
-			coin_array[i].get_state() = 1;
-			coin_array[i].get_collected_coins() -= 1;
-		}
+		coin_array[i].get_state() = 1;
+		coin_array[i].get_collected_coins() = 0;
 	}
-
 }
+
 
 /*function that takes player_name and coins/drones killed and score board file.
 In the function, points for the player will be calculated. File input will occur and grab the data from the scoreboard file. Player will be compared
 to the data in the file and sorted. File output will occur and overwrite with the new sorted data to scoreboard file. Names and values will be returned
 from the function so it can be drawn to the end screen continuously, below "Press R to restart"
 */
-void scoreboard(char scoreboard_file[], char _player_name[], Enemy enemy_array[], Coin coin_array[], char _first[], char _second[], char _third[], double& _firstpnts, double& _secondpnts, double& _thirdpnts, bool& scoreboard_trigger) {
+void scoreboard(char scoreboard_file[], char _player_name[], Enemy enemy_array[], Coin coin_array[], char _first[], char _second[], char _third[], double& _firstpnts, double& _secondpnts, double& _thirdpnts, bool& scoreboard_trigger, Sound _victory_scoreboard, Sound _defeat_scoreboard) {
 	int i;
 	double tempfirstpnts, tempsecondpnts, tempthirdpnts, playerpnts;	//store the scoreboard points
 	char temp_first[20], temp_second[20], temp_third[20];				//store the scoreboard names
@@ -626,6 +630,14 @@ void scoreboard(char scoreboard_file[], char _player_name[], Enemy enemy_array[]
 				_secondpnts = tempsecondpnts;
 			}
 		}
+	}
+
+	//MUSIC PLAYS BASED ON PLAYERS SCORE!
+	if (playerpnts >= _thirdpnts) {
+		_victory_scoreboard.play();
+	}
+	else {
+		_defeat_scoreboard.play();
 	}
 
 	/*At this point, the scoreboard names have been input to first/second/third place char arrays, now compare player's point to scoreboard and adjust
