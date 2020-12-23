@@ -1,3 +1,0 @@
-Gurvir 1000
-Muneeb 300
-Player 100
